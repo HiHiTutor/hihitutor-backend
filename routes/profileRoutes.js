@@ -6,7 +6,7 @@ const path = require("path");
 const fs = require("fs");
 
 const User = require("../models/User");
-const UserProfile = require("../models/UserProfile");
+const UserProfile = require("../models/userProfile");
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 
