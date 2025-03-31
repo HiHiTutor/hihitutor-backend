@@ -58,21 +58,26 @@ router.put("/:id/reject", authMiddleware, async (req, res) => {
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
+    const updateData = { ...req.body };
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: "無效的個案 ID" });
+      return res.status(400).json({ error: "個案 ID 無效" });
     }
 
-    const updatedCase = await Case.findByIdAndUpdate(id, req.body, { new: true });
+    delete updateData._id;
+    delete updateData.id;
+
+    const updatedCase = await Case.findByIdAndUpdate(id, updateData, { new: true });
 
     if (!updatedCase) {
-      return res.status(404).json({ error: "找不到該個案" });
+      return res.status(404).json({ error: "找不到個案" });
     }
 
+    console.log("✅ 成功更新個案:", updatedCase);
     res.json(updatedCase);
   } catch (err) {
-    console.error("❌ 一般個案更新失敗:", err.message);
-    res.status(500).json({ error: "伺服器錯誤" });
+    console.error("❌ 更新個案錯誤:", err.message);
+    res.status(500).json({ error: `伺服器錯誤，請稍後再試。 錯誤詳情: ${err.message}` });
   }
 });
 
@@ -120,13 +125,14 @@ router.post(
   }
 );
 
-/** 🟠 取得所有個案（已審批） */
+/** 🟠 取得目前登入用戶的個案 */
 router.get("/my", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const { postType } = req.query;
     const query = { userId };
     if (postType) query.postType = postType;
+
     const myCases = await Case.find(query).sort({ createdAt: -1 });
     res.json(myCases);
   } catch (err) {
@@ -135,27 +141,23 @@ router.get("/my", authMiddleware, async (req, res) => {
   }
 });
 
-/** 🟠 取得所有個案（已審批） */
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const { postType, sortField = "createdAt", sortOrder = "desc" } = req.query;
     let query = { approved: true };
-
     if (postType) query.postType = postType;
 
-    const sortOption = { [sortField]: sortOrder.toLowerCase() === "asc" ? 1 : -1 };
+    const sortKey = sortField === "id" ? "_id" : sortField;
+    const sortOption = { [sortKey]: sortOrder.toLowerCase() === "asc" ? 1 : -1 };
+
     const cases = await Case.find(query).sort(sortOption);
-
-    if (!cases || cases.length === 0) {
-      return res.status(404).json({ error: "沒有找到符合條件的個案" });
-    }
-
     res.status(200).json(cases);
   } catch (err) {
     console.error("❌ 伺服器錯誤:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
+
 
 /** 🟡 取得所有 **待審批** 的個案 */
 router.get("/pending", authMiddleware, async (req, res) => {
@@ -164,30 +166,12 @@ router.get("/pending", authMiddleware, async (req, res) => {
     const sortOption = { [sortField]: sortOrder.toLowerCase() === "asc" ? 1 : -1 };
     const pendingCases = await Case.find({ approved: false }).sort(sortOption);
 
-    if (!pendingCases.length) {
-      return res.status(404).json({ error: "沒有待審批的個案" });
-    }
-
     res.status(200).json(pendingCases);
   } catch (err) {
     console.error("❌ 伺服器錯誤:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
-
-/** 🟢 獲取目前登入用戶的所有個案 */
-router.get("/my", authMiddleware, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const cases = await Case.find({ userId }).sort({ createdAt: -1 });
-
-    res.status(200).json(cases);
-  } catch (err) {
-    console.error("❌ 獲取自己個案失敗:", err.message);
-    res.status(500).json({ error: "伺服器錯誤" });
-  }
-});
-
 
 /** 🟣 取得單一個案（用於編輯個案） */
 router.get("/:id", authMiddleware, async (req, res) => {
@@ -225,35 +209,6 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   } catch (err) {
     console.error("❌ 刪除個案失敗:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
-  }
-});
-
-/** 🛠️ 更新個案（例如狀態、配對等） */
-router.put("/:id", authMiddleware, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updateData = { ...req.body };
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: "個案 ID 無效" });
-    }
-
-    console.log("🧪 準備更新的資料:", updateData);
-
-    delete updateData._id;
-    delete updateData.id;
-
-    const updatedCase = await Case.findByIdAndUpdate(id, updateData, { new: true });
-
-    if (!updatedCase) {
-      return res.status(404).json({ error: "找不到個案" });
-    }
-
-    console.log("✅ 成功更新個案:", updatedCase);
-    res.json(updatedCase);
-  } catch (err) {
-    console.error("❌ 更新個案錯誤:", err.message);
-    res.status(500).json({ error: `伺服器錯誤，請稍後再試。 錯誤詳情: ${err.message}` });
   }
 });
 
