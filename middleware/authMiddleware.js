@@ -1,5 +1,9 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+console.log("📌 auth header:", authHeader);
+console.log("📌 decoded JWT:", decoded);
+console.log("📌 找到用戶:", req.user);
+
 
 module.exports = async (req, res, next) => {
   try {
