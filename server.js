@@ -11,7 +11,7 @@ const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/hihitutor"
 
 // ✅ 設定 CORS
 app.use(cors({
-  origin: origin: [
+  origin: [
   "https://hihitutor-frontend.onrender.com",
   "http://localhost:3000"
 ],
