@@ -35,4 +35,8 @@ router.post("/verify-code", (req, res) => {
   return res.status(200).json({ message: "驗證成功" });
 });
 
-module.exports = router;
+module.exports = {
+  router,
+  verificationCodes
+};
+

@@ -6,6 +6,7 @@ const User = require("../models/User");
 const UserProfile = require("../models/userProfile");
 const authMiddleware = require("../middleware/authMiddleware"); // 引入身份驗證中介層
 const organizationUpload = require("../middleware/organizationUploadWithTextFields");
+const { verificationCodes } = require("../routes/smsRoutes");
 const router = express.Router();
 require("dotenv").config();
 
@@ -30,9 +31,20 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const { name, birthdate, email, password, phone, userType } = req.body;
+   const { name, birthdate, email, password, phone, userType, verificationCode } = req.body;
 
     try {
+if (!verificationCodes.has(phone)) {
+  return res.status(400).json({ msg: "請先取得驗證碼" });
+}
+
+if (verificationCodes.get(phone) !== verificationCode) {
+  return res.status(400).json({ msg: "驗證碼錯誤" });
+}
+
+// 成功後刪除記錄
+verificationCodes.delete(phone);
+
       const existing = await User.findOne({ email });
       if (existing) return res.status(400).json({ msg: "該電郵已被註冊" });
 
