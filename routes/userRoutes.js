@@ -96,12 +96,12 @@ router.post(
   }
 );
 
-/** 🔵 用戶登入 API */
+/** 🔵 用戶登入 API（支援 Email 或電話號碼） */
 router.post(
   "/login",
   [
-    check("email", "請輸入有效的電郵").isEmail(),
     check("password", "請輸入密碼").exists(),
+    check("identifier", "請輸入電郵或電話號碼").notEmpty(),
   ],
   async (req, res) => {
     console.log("📌 收到 /login 請求:", req.body);
@@ -111,10 +111,16 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { identifier, password } = req.body; // 可以是 email 或 phone
 
     try {
-      let user = await User.findOne({ email }).select("+password");
+      let user = await User.findOne({
+        $or: [
+          { email: identifier },
+          { phone: identifier }
+        ]
+      }).select("+password");
+
       if (!user) {
         return res.status(400).json({ msg: "無效的帳號或密碼 (用戶不存在)" });
       }
@@ -130,7 +136,7 @@ router.post(
       res.json({ token });
 
     } catch (err) {
-      console.error("❌ 伺服器錯誤:", err.message);
+      console.error("❌ 登入錯誤:", err.message);
       res.status(500).send("伺服器錯誤");
     }
   }
