@@ -12,9 +12,9 @@ const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/hihitutor"
 // ✅ 設定 CORS
 app.use(cors({
   origin: [
-  "https://hihitutor-frontend.onrender.com",
-  "http://localhost:3000"
-],
+    "https://hihitutor-frontend.onrender.com",
+    "http://localhost:3000"
+  ],
   methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "Range"],
@@ -32,7 +32,10 @@ app.use((req, res, next) => {
 });
 
 // ✅ 連接 MongoDB
-mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
   .then(() => {
     console.log("✅ 成功連接 MongoDB");
 
@@ -43,6 +46,7 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     const caseRoutes = require(path.join(__dirname, "routes/caseRoutes"));
     const profileRoutes = require(path.join(__dirname, "routes/profileRoutes"));
 
+    // ✅ 路由註冊
     app.use("/api/users", userRoutes);
     app.use("/api/students", studentRoutes);
     app.use("/api/tutors", tutorRoutes);
