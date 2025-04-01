@@ -285,7 +285,10 @@ router.post("/create-admin", async (req, res) => {
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const user = req.user;
-    if (!user) return res.status(404).json({ msg: "用戶不存在" });
+    if (!user) {
+      console.warn("⚠️ req.user 不存在");
+      return res.status(404).json({ msg: "用戶不存在" });
+    }
 
     let profileData = null;
 
@@ -293,7 +296,7 @@ router.get("/me", authMiddleware, async (req, res) => {
       const userProfile = await UserProfile.findOne({ userId: user._id });
       profileData = userProfile?.approvedProfile || null;
     } catch (profileErr) {
-      console.warn("⚠️ 找不到 Profile 或資料格式錯誤：", profileErr.message);
+      console.error("❌ 找不到 profile 或格式錯誤：", profileErr);
     }
 
     res.json({
@@ -302,7 +305,7 @@ router.get("/me", authMiddleware, async (req, res) => {
       profile: profileData
     });
   } catch (err) {
-    console.error("❌ /me 錯誤:", err.message);
+    console.error("❌ /me 總錯誤:", err); // 🔴 請用 console.error 印出錯誤
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
