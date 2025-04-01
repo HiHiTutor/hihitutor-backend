@@ -11,7 +11,10 @@ const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/hihitutor"
 
 // ✅ 設定 CORS
 app.use(cors({
-  origin: "*", // 可改為白名單域名
+  origin: origin: [
+  "https://hihitutor-frontend.onrender.com",
+  "http://localhost:3000"
+],
   methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "Range"],
