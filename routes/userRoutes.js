@@ -287,12 +287,19 @@ router.get("/me", authMiddleware, async (req, res) => {
     const user = req.user;
     if (!user) return res.status(404).json({ msg: "用戶不存在" });
 
-    const userProfile = await UserProfile.findOne({ userId: user._id });
+    let profileData = null;
+
+    try {
+      const userProfile = await UserProfile.findOne({ userId: user._id });
+      profileData = userProfile?.approvedProfile || null;
+    } catch (profileErr) {
+      console.warn("⚠️ 找不到 Profile 或資料格式錯誤：", profileErr.message);
+    }
 
     res.json({
       id: user._id.toString(),
       ...user.toObject(),
-      profile: userProfile?.approvedProfile || null
+      profile: profileData
     });
   } catch (err) {
     console.error("❌ /me 錯誤:", err.message);
