@@ -212,4 +212,27 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// 🔒 取得當前用戶個案（需要登入）
+router.get("/my", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const role = req.user.tags?.includes("student") ? "student" : "tutor";
+
+    let myCases;
+    if (role === "student") {
+      // 學生建立的個案
+      myCases = await Case.find({ studentId: userId });
+    } else {
+      // 導師建立的個案
+      myCases = await Case.find({ tutorId: userId });
+    }
+
+    res.status(200).json(myCases);
+  } catch (err) {
+    console.error("❌ 無法取得個案:", err);
+    res.status(500).json({ message: "伺服器錯誤，無法取得個案" });
+  }
+});
+
+
 module.exports = router;
