@@ -40,7 +40,7 @@ mongoose.connect(MONGO_URI, {
     console.log("✅ 成功連接 MongoDB");
 
     // ✅ 載入 API 路由
-    const { router: smsRoutes } = require('./routes/smsRoutes'); // ✅ 修正點
+    const smsRoutes = require('./routes/smsRoutes');
     const userRoutes = require(path.join(__dirname, "routes/userRoutes"));
     const studentRoutes = require(path.join(__dirname, "routes/studentRoutes"));
     const tutorRoutes = require(path.join(__dirname, "routes/tutorRoutes"));
@@ -48,7 +48,7 @@ mongoose.connect(MONGO_URI, {
     const profileRoutes = require(path.join(__dirname, "routes/profileRoutes"));
 
     // ✅ 路由註冊
-    app.use("/api/sms", smsRoutes); // 👈 正確註冊 SMS router
+    app.use("/api/sms", smsRoutes);
     app.use("/api/users", userRoutes);
     app.use("/api/students", studentRoutes);
     app.use("/api/tutors", tutorRoutes);
