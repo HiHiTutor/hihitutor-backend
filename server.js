@@ -40,7 +40,7 @@ mongoose.connect(MONGO_URI, {
     console.log("✅ 成功連接 MongoDB");
 
     // ✅ 載入 API 路由
-    const smsRoutes = require('./routes/smsRoutes');
+    const { router: smsRoutes } = require('./routes/smsRoutes');
     const userRoutes = require(path.join(__dirname, "routes/userRoutes"));
     const studentRoutes = require(path.join(__dirname, "routes/studentRoutes"));
     const tutorRoutes = require(path.join(__dirname, "routes/tutorRoutes"));
