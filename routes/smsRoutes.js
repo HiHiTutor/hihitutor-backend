@@ -1,9 +1,6 @@
 const express = require("express");
 const router = express.Router();
 
-// 簡單記憶驗證碼（用 Map 暫存，實際應用應該用 Redis）
-const verificationCodes = new Map();
-
 // 🔹 POST /api/sms/send-code
 router.post("/send-code", (req, res) => {
   const { phone } = req.body;
@@ -30,13 +27,9 @@ router.post("/verify-code", (req, res) => {
 
   if (validCode !== code) return res.status(400).json({ message: "驗證碼錯誤" });
 
-  // 成功後刪除記錄
   verificationCodes.delete(phone);
   return res.status(200).json({ message: "驗證成功" });
 });
 
-module.exports = {
-  router,
-  verificationCodes
-};
-
+// ✅ 正確 export router：
+module.exports = router;
