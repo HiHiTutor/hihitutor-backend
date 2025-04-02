@@ -289,20 +289,23 @@ router.get("/me", authMiddleware, async (req, res) => {
 
     const user = req.user;
 
-    // 🛡 安全查找 userProfile
-    const userProfile = await UserProfile.findOne({ userId: user._id });
+    let userProfile = null;
+    try {
+      userProfile = await UserProfile.findOne({ userId: user._id });
+    } catch (err) {
+      console.warn("⚠️ 找不到 userProfile 或出錯:", err.message);
+    }
 
     res.json({
       id: user._id.toString(),
       ...user.toObject(),
-      profile: userProfile && userProfile.approvedProfile ? userProfile.approvedProfile : null
+      profile: userProfile?.approvedProfile || null
     });
 
   } catch (err) {
-    console.error("❌ /me 錯誤:", err);
+    console.error("❌ /me 總錯誤:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
-
 
 module.exports = router;
