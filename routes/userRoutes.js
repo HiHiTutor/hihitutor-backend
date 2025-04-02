@@ -282,9 +282,10 @@ router.post("/create-admin", async (req, res) => {
 });
 
 /** 🟢 取得當前登入用戶資料（/api/users/me） */
+/** 🟢 取得當前登入用戶資料（/api/users/me） */
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    console.log("✅ /me middleware req.user:", req.user); // ← 加呢行
+    console.log("🧪 /me req.user:", req.user); // << 加呢句
 
     const user = await User.findById(req.user._id).select("-password");
     if (!user) return res.status(404).json({ msg: "用戶不存在" });
