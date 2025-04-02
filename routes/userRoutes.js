@@ -288,39 +288,6 @@ router.get("/me", authMiddleware, async (req, res) => {
     console.log("🧪 /me → req.user:", req.user);
 
     const user = req.user;
-    let plainUser;
-
-    // ✅ 保險式轉換，防止出錯
-    if (user.toObject && typeof user.toObject === 'function') {
-      plainUser = user.toObject();
-    } else {
-      plainUser = { ...user };
-    }
-
-    // 🟡 嘗試拉取已審批 profile
-    let userProfile = null;
-    try {
-      userProfile = await UserProfile.findOne({ userId: user._id });
-    } catch (err) {
-      console.warn("⚠️ 找不到 userProfile 或出錯:", err.message);
-    }
-
-    // ✅ 成功回傳資料
-    res.json({
-      id: user._id?.toString?.() || String(user._id),
-      ...plainUser,
-      profile: userProfile?.approvedProfile || null
-    });
-
-  } catch (err) {
-    console.error("❌ /me 總錯誤:", err.message);
-    res.status(500).json({ error: "伺服器錯誤" });
-  }
-});router.get("/me", authMiddleware, async (req, res) => {
-  try {
-    console.log("🧪 /me → req.user:", req.user);
-
-    const user = req.user;
     let userProfile = null;
 
     try {
@@ -346,7 +313,6 @@ router.get("/me", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
-
 
 
 module.exports = router;
