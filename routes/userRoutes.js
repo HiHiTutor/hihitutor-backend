@@ -287,30 +287,39 @@ router.get("/me", authMiddleware, async (req, res) => {
   try {
     console.log("🧪 /me → req.user:", req.user);
 
-    const user = req.user;
-    let userProfile = null;
+    const {
+      _id,
+      name,
+      birthdate,
+      email,
+      phone,
+      tags,
+      createdAt,
+      userType
+    } = req.user;
 
+    let userProfile = null;
     try {
-      userProfile = await UserProfile.findOne({ userId: user._id });
+      userProfile = await UserProfile.findOne({ userId: _id });
     } catch (err) {
-      console.warn("⚠️ 找不到 userProfile 或出錯:", err.message);
+      console.warn("⚠️ 找不到 userProfile 或出錯:", err);
     }
 
-    res.json({
-      id: user._id?.toString?.() || String(user._id),
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      birthdate: user.birthdate,
-      tags: user.tags,
-      userType: user.userType,
-      createdAt: user.createdAt,
+    return res.json({
+      id: _id?.toString?.() || String(_id),
+      name,
+      birthdate,
+      email,
+      phone,
+      tags,
+      createdAt,
+      userType,
       profile: userProfile?.approvedProfile || null
     });
 
   } catch (err) {
-    console.error("❌ /me 總錯誤:", err.message);
-    res.status(500).json({ error: "伺服器錯誤" });
+    console.error("❌ /me 總錯誤:", err); // 改用完整 error log
+    return res.status(500).json({ error: "伺服器錯誤", detail: err.message });
   }
 });
 
