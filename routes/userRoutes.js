@@ -289,7 +289,7 @@ router.get("/me", authMiddleware, async (req, res) => {
 
     const user = req.user;
 
-    // 查找是否有 profile（可以為 null）
+    // 🛡 安全查找 userProfile
     const userProfile = await UserProfile.findOne({ userId: user._id });
 
     res.json({
@@ -299,7 +299,7 @@ router.get("/me", authMiddleware, async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ /me 錯誤:", err.message);
+    console.error("❌ /me 錯誤:", err);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
