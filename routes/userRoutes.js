@@ -4,13 +4,12 @@ const jwt = require("jsonwebtoken");
 const { check, validationResult } = require("express-validator");
 const User = require("../models/User");
 const UserProfile = require("../models/userProfile");
-const authMiddleware = require("../middleware/authMiddleware"); // 引入身份驗證中介層
+const authMiddleware = require("../middleware/authMiddleware");
 const organizationUpload = require("../middleware/organizationUploadWithTextFields");
 const { verificationCodes } = require("../routes/smsRoutes");
 const router = express.Router();
 require("dotenv").config();
 
-// ✅ Debug 訊息：確認 API 正確載入
 console.log("✅ userRoutes.js 已載入");
 
 router.post(
@@ -282,12 +281,17 @@ router.post("/create-admin", async (req, res) => {
 });
 
 
-/** 🟢 取得當前登入用戶資料（/api/users/me） */
-router.get("/test-plain", (req, res) => {
-  res.json({ message: "✅ /test-plain 回傳成功" });
+/** ✅ 最簡單可回傳資料的 /api/users/me 測試版本 */
+router.get("/me", authMiddleware, (req, res) => {
+  try {
+    res.json({
+      message: "✅ 測試 /me 成功",
+      user: req.user
+    });
+  } catch (err) {
+    console.error("❌ /me 錯誤:", err.message);
+    res.status(500).json({ error: "伺服器錯誤" });
+  }
 });
-
-
-
 
 module.exports = router;

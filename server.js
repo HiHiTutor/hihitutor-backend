@@ -42,6 +42,7 @@ mongoose.connect(MONGO_URI, {
     // ✅ 載入 API 路由
     const { router: smsRoutes } = require('./routes/smsRoutes');
     const userRoutes = require(path.join(__dirname, "routes/userRoutes"));
+    const userSelfRoutes = require(path.join(__dirname, "routes/userSelfRoutes"));
     const studentRoutes = require(path.join(__dirname, "routes/studentRoutes"));
     const tutorRoutes = require(path.join(__dirname, "routes/tutorRoutes"));
     const caseRoutes = require(path.join(__dirname, "routes/caseRoutes"));
@@ -50,6 +51,7 @@ mongoose.connect(MONGO_URI, {
     // ✅ 路由註冊
     app.use("/api/sms", smsRoutes);
     app.use("/api/users", userRoutes);
+    app.use("/api/users", userSelfRoutes); 
     app.use("/api/students", studentRoutes);
     app.use("/api/tutors", tutorRoutes);
     app.use("/api/cases", caseRoutes);
