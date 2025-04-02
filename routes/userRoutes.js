@@ -288,7 +288,7 @@ router.get("/me", authMiddleware, async (req, res) => {
     console.log("🧪 /me → req.user:", req.user);
 
     const user = req.user;
-    const plainUser = user.toObject ? user.toObject() : user;
+    const plainUser = user.toObject ? user.toObject() : user; // ✅ 防止出錯
 
     let userProfile = null;
     try {
