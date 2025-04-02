@@ -283,12 +283,12 @@ router.post("/create-admin", async (req, res) => {
 
 
 /** 🟢 取得當前登入用戶資料（/api/users/me） */
-/** 🔧 測試最簡單 /me API */
-router.get("/me", authMiddleware, async (req, res) => {
+/** 🧪 測試 /me（無 middleware） */
+router.get("/me", async (req, res) => {
   try {
-    res.json({ message: "✅ 試下得唔得 🔧" });
+    res.json({ msg: "✅ 完全跳過 middleware" });
   } catch (err) {
-    console.error("❌ /me 錯誤:", err.message);
+    console.error("❌ /me 測試錯誤:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
