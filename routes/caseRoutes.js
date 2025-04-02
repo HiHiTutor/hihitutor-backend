@@ -2,7 +2,7 @@ console.log("✅ caseRoutes 加載成功");
 const express = require("express");
 const { check, validationResult } = require("express-validator");
 const mongoose = require("mongoose");
-const Case = require("../models/Case");
+const Case = require("../models/case");
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 
