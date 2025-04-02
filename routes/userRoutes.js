@@ -318,7 +318,7 @@ router.get("/me", authMiddleware, async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ /me 總錯誤:", err); // 改用完整 error log
+    console.error("❌ /me 總錯誤:", err);
     return res.status(500).json({ error: "伺服器錯誤", detail: err.message });
   }
 });
