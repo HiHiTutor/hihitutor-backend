@@ -281,17 +281,5 @@ router.post("/create-admin", async (req, res) => {
 });
 
 
-/** ✅ 最簡單可回傳資料的 /api/users/me 測試版本 */
-router.get("/me", authMiddleware, (req, res) => {
-  try {
-    res.json({
-      message: "✅ 測試 /me 成功",
-      user: req.user
-    });
-  } catch (err) {
-    console.error("❌ /me 錯誤:", err.message);
-    res.status(500).json({ error: "伺服器錯誤" });
-  }
-});
 
 module.exports = router;
