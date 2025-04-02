@@ -283,46 +283,16 @@ router.post("/create-admin", async (req, res) => {
 
 
 /** 🟢 取得當前登入用戶資料（/api/users/me） */
-/** 🟢 取得當前登入用戶資料（/api/users/me） */
+/** 🔧 測試最簡單 /me API */
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    console.log("🧪 /me → req.user:", req.user);
-
-    const user = req.user;
-    const plainUser = JSON.parse(JSON.stringify(user));
-
-    // ✅ 查找 profile
-    let profile = null;
-    try {
-      const userProfile = await UserProfile.findOne({ userId: user._id });
-      console.log("🧪 userProfile（原始）:", userProfile);
-      profile = userProfile?.approvedProfile || null;
-    } catch (err) {
-      console.warn("⚠️ 查詢 userProfile 錯誤:", err.message);
-    }
-
-    // ✅ 最後 Response
-    const responseData = {
-      id: plainUser._id,
-      name: plainUser.name,
-      email: plainUser.email,
-      phone: plainUser.phone,
-      birthdate: plainUser.birthdate,
-      userType: plainUser.userType,
-      tags: plainUser.tags,
-      createdAt: plainUser.createdAt,
-      profile,
-    };
-
-    console.log("✅ 最終 responseData:", responseData);
-
-    res.json(responseData);
-
+    res.json({ message: "✅ 試下得唔得 🔧" });
   } catch (err) {
-    console.error("❌ /me 總錯誤:", err.stack);
+    console.error("❌ /me 錯誤:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
+
 
 
 
