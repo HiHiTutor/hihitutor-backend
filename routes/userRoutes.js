@@ -284,39 +284,9 @@ router.post("/create-admin", async (req, res) => {
 
 /** 🟢 取得當前登入用戶資料（/api/users/me） */
 router.get("/me", authMiddleware, async (req, res) => {
-  try {
-    const {
-      _id,
-      name,
-      birthdate,
-      email,
-      phone,
-      tags,
-      createdAt,
-      userType,
-      age
-    } = req.user;
-
-    const userProfile = await UserProfile.findOne({ userId: _id }).lean();
-
-    return res.json({
-      id: _id?.toString?.() || String(_id),
-      name,
-      birthdate,
-      email,
-      phone,
-      tags,
-      createdAt,
-      userType,
-      age,
-      profile: userProfile?.approvedProfile || null
-    });
-
-  } catch (err) {
-    console.error("❌ /me 總錯誤:", err.message);
-    return res.status(500).json({ error: "伺服器錯誤", detail: err.message });
-  }
+  return res.json({ message: "✅ /me API 正常工作" });
 });
+
 
 
 module.exports = router;
