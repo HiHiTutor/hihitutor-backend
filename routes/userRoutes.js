@@ -288,6 +288,7 @@ router.get("/me", authMiddleware, async (req, res) => {
     console.log("🧪 /me → req.user:", req.user);
 
     const user = req.user;
+    const plainUser = user.toObject ? user.toObject() : user;
 
     let userProfile = null;
     try {
@@ -298,7 +299,7 @@ router.get("/me", authMiddleware, async (req, res) => {
 
     res.json({
       id: user._id.toString(),
-      ...user.toObject(),
+      ...plainUser,
       profile: userProfile?.approvedProfile || null
     });
 
