@@ -95,5 +95,3 @@ mongoose.connection.on("error", err => {
 mongoose.connection.on("disconnected", () => {
   console.warn("⚠️ MongoDB 中斷連線");
 });
-
-module.exports = router;
