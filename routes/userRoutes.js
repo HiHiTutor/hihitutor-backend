@@ -284,8 +284,41 @@ router.post("/create-admin", async (req, res) => {
 
 /** 🟢 取得當前登入用戶資料（/api/users/me） */
 router.get("/me", authMiddleware, async (req, res) => {
-  return res.json({ message: "✅ /me API 正常工作" });
+  try {
+    console.log("🧪 /me → req.user:", req.user);
+
+    const user = req.user;
+
+    // 轉為乾淨 JSON（去除 mongoose object，避免 circular error）
+    const plainUser = JSON.parse(JSON.stringify(user));
+
+    // 額外補充：處理 userProfile
+    let profile = null;
+    try {
+      const userProfile = await UserProfile.findOne({ userId: user._id });
+      profile = userProfile?.approvedProfile || null;
+    } catch (err) {
+      console.warn("⚠️ 查詢 userProfile 失敗:", err.message);
+    }
+
+    res.json({
+      id: plainUser._id,
+      name: plainUser.name,
+      email: plainUser.email,
+      phone: plainUser.phone,
+      birthdate: plainUser.birthdate,
+      userType: plainUser.userType,
+      tags: plainUser.tags,
+      createdAt: plainUser.createdAt,
+      profile
+    });
+
+  } catch (err) {
+    console.error("❌ /me 錯誤:", err.message);
+    res.status(500).json({ error: "伺服器錯誤" });
+  }
 });
+
 
 
 
