@@ -285,10 +285,9 @@ router.post("/create-admin", async (req, res) => {
 /** 🟢 取得當前登入用戶資料（/api/users/me） */
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    console.log("🧪 /me → req.user:", req.user); // ← 加呢行 debug
+    console.log("🧪 /me → req.user:", req.user); // Debug
 
-    const userId = req.user.id || req.user._id;  // ← 用更保險方式提取 userId
-    const user = await User.findById(userId).select("-password");
+    const user = req.user; // ✅ middleware 已查好並帶入完整 user
 
     if (!user) return res.status(404).json({ msg: "用戶不存在" });
 
