@@ -283,25 +283,26 @@ router.post("/create-admin", async (req, res) => {
 
 
 /** 🟢 取得當前登入用戶資料（/api/users/me） */
+/** 🟢 取得當前登入用戶資料（/api/users/me） */
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     console.log("🧪 /me → req.user:", req.user);
 
     const user = req.user;
-
-    // 轉為乾淨 JSON（去除 mongoose object，避免 circular error）
     const plainUser = JSON.parse(JSON.stringify(user));
 
-    // 額外補充：處理 userProfile
+    // ✅ 查找 profile
     let profile = null;
     try {
       const userProfile = await UserProfile.findOne({ userId: user._id });
+      console.log("🧪 userProfile（原始）:", userProfile);
       profile = userProfile?.approvedProfile || null;
     } catch (err) {
-      console.warn("⚠️ 查詢 userProfile 失敗:", err.message);
+      console.warn("⚠️ 查詢 userProfile 錯誤:", err.message);
     }
 
-    res.json({
+    // ✅ 最後 Response
+    const responseData = {
       id: plainUser._id,
       name: plainUser.name,
       email: plainUser.email,
@@ -310,11 +311,15 @@ router.get("/me", authMiddleware, async (req, res) => {
       userType: plainUser.userType,
       tags: plainUser.tags,
       createdAt: plainUser.createdAt,
-      profile
-    });
+      profile,
+    };
+
+    console.log("✅ 最終 responseData:", responseData);
+
+    res.json(responseData);
 
   } catch (err) {
-    console.error("❌ /me 錯誤:", err.message);
+    console.error("❌ /me 總錯誤:", err.stack);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
