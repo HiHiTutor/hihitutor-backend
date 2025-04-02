@@ -51,7 +51,7 @@ mongoose.connect(MONGO_URI, {
     // ✅ 路由註冊
     app.use("/api/sms", smsRoutes);
     app.use("/api/users", userRoutes);
-    app.use("/api/users", userSelfRoutes); 
+    app.use("/api/self-users", userSelfRoutes);
     app.use("/api/students", studentRoutes);
     app.use("/api/tutors", tutorRoutes);
     app.use("/api/cases", caseRoutes);
@@ -95,3 +95,5 @@ mongoose.connection.on("error", err => {
 mongoose.connection.on("disconnected", () => {
   console.warn("⚠️ MongoDB 中斷連線");
 });
+
+module.exports = router;
