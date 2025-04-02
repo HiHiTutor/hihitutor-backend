@@ -285,8 +285,6 @@ router.post("/create-admin", async (req, res) => {
 /** 🟢 取得當前登入用戶資料（/api/users/me） */
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    console.log("🧪 /me → req.user:", req.user);
-
     const {
       _id,
       name,
@@ -295,15 +293,11 @@ router.get("/me", authMiddleware, async (req, res) => {
       phone,
       tags,
       createdAt,
-      userType
+      userType,
+      age
     } = req.user;
 
-    let userProfile = null;
-    try {
-      userProfile = await UserProfile.findOne({ userId: _id });
-    } catch (err) {
-      console.warn("⚠️ 找不到 userProfile 或出錯:", err);
-    }
+    const userProfile = await UserProfile.findOne({ userId: _id }).lean();
 
     return res.json({
       id: _id?.toString?.() || String(_id),
@@ -314,11 +308,12 @@ router.get("/me", authMiddleware, async (req, res) => {
       tags,
       createdAt,
       userType,
+      age,
       profile: userProfile?.approvedProfile || null
     });
 
   } catch (err) {
-    console.error("❌ /me 總錯誤:", err);
+    console.error("❌ /me 總錯誤:", err.message);
     return res.status(500).json({ error: "伺服器錯誤", detail: err.message });
   }
 });
