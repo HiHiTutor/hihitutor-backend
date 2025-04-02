@@ -285,19 +285,19 @@ router.post("/create-admin", async (req, res) => {
 /** 🟢 取得當前登入用戶資料（/api/users/me） */
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    console.log("🧪 /me → req.user:", req.user); // Debug
+    console.log("🧪 /me → req.user:", req.user);
 
-    const user = req.user; // ✅ middleware 已查好並帶入完整 user
+    const user = req.user;
 
-    if (!user) return res.status(404).json({ msg: "用戶不存在" });
-
+    // 查找是否有 profile（可以為 null）
     const userProfile = await UserProfile.findOne({ userId: user._id });
 
     res.json({
       id: user._id.toString(),
       ...user.toObject(),
-      profile: userProfile?.approvedProfile || null
+      profile: userProfile && userProfile.approvedProfile ? userProfile.approvedProfile : null
     });
+
   } catch (err) {
     console.error("❌ /me 錯誤:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
