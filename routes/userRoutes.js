@@ -287,7 +287,7 @@ router.get("/me", authMiddleware, async (req, res) => {
   try {
     console.log("🧪 /me req.user:", req.user); // << 加呢句
 
-    const user = await User.findById(req.user._id).select("-password");
+    const user = await User.findById(req.user._id || req.user.id).select("-password");
     if (!user) return res.status(404).json({ msg: "用戶不存在" });
 
     const userProfile = await UserProfile.findOne({ userId: user._id });
