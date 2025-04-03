@@ -23,6 +23,8 @@ app.use(cors({
   exposedHeaders: ["Content-Range", "X-Total-Count"]
 }));
 
+app.options("*", cors()); // ✅ 新增這行處理 preflight
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
