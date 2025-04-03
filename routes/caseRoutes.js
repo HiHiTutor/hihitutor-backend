@@ -125,6 +125,20 @@ router.post(
   }
 );
 
+/** 🔓 Public API：未登入都可以查看已審批個案 */
+router.get("/public", async (req, res) => {
+  try {
+    const publicCases = await Case.find({
+      approved: true,
+      status: { $in: ["開放中", "配對中"] }
+    });
+    res.json(publicCases);
+  } catch (err) {
+    console.error("❌ 取得公開個案失敗:", err);
+    res.status(500).json({ error: "伺服器錯誤，無法取得公開個案" });
+  }
+});
+
 
 /** 🟠 取得目前登入用戶的個案 */
 router.get("/my", authMiddleware, async (req, res) => {
@@ -210,20 +224,6 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   } catch (err) {
     console.error("❌ 刪除個案失敗:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
-  }
-});
-
-/** 🔓 Public API：未登入都可以查看已審批個案 */
-router.get("/public", async (req, res) => {
-  try {
-    const publicCases = await Case.find({
-      approved: true,
-      status: { $in: ["開放中", "配對中"] }
-    });
-    res.json(publicCases);
-  } catch (err) {
-    console.error("❌ 取得公開個案失敗:", err);
-    res.status(500).json({ error: "伺服器錯誤，無法取得公開個案" });
   }
 });
 
