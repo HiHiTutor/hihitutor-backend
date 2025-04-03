@@ -60,10 +60,10 @@ router.post("/:userId/certificates", uploadCertificates.array("certificates", 5)
 /** 🔵 取得登入用戶發佈的所有個案 */
 router.get("/my-cases", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { postType } = req.query;
 
-    const query = { userId };
+    const query = { createdBy: userId };
     if (postType) query.postType = postType;
 
     const myCases = await Case.find(query).sort({ createdAt: -1 });
