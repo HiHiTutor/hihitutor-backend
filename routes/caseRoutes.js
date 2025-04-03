@@ -213,6 +213,21 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
+/** 🔓 顯示公開個案（不需登入） */
+router.get("/public", async (req, res) => {
+  try {
+    const cases = await Case.find({
+      approved: true,
+      status: { $in: ["開放中", "配對中"] }, // 你可以按需要改 status 條件
+    }).sort({ createdAt: -1 });
+
+    res.json(cases);
+  } catch (err) {
+    console.error("❌ 公開個案讀取錯誤:", err.message);
+    res.status(500).json({ error: "伺服器錯誤，請稍後再試。" });
+  }
+});
+
 
 
 module.exports = router;
