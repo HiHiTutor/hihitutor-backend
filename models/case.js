@@ -15,11 +15,24 @@ const CaseSchema = new mongoose.Schema({
   approved: { type: Boolean, default: false },        // ✅ 是否審批
   createdAt: { type: Date, default: Date.now },       // ✅ 發布時間
 
-  // ✅ 修復這裡：補回逗號 + 加上「待上課」status
   status: {
     type: String,
     enum: ["開放中", "配對中", "待上課", "已完成"],
     default: "開放中"
+  },
+
+  // ✅ 新增：紀錄邊個 user 發佈
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+
+  // ✅ 新增：紀錄配對咗邊個導師（可為 null）
+  matchedTutor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null
   }
 });
 

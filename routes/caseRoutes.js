@@ -106,7 +106,7 @@ router.post(
     try {
       const newCase = new Case({
         ...req.body,
-        userId: req.user.id,
+        createdBy: req.user._id, // ✅ 最重要：儲存係邊個 user 出嘅個案
         approved: false,
         status: "開放中",
         createdAt: new Date(),
@@ -124,6 +124,7 @@ router.post(
     }
   }
 );
+
 
 /** 🟠 取得目前登入用戶的個案 */
 router.get("/my", authMiddleware, async (req, res) => {
