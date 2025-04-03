@@ -194,10 +194,21 @@ router.get("/", authMiddleware, async (req, res) => {
     res.set("Content-Range", `users 0-${users.length - 1}/${totalUsers}`);
     res.set("X-Total-Count", totalUsers);
 
-    const formattedUsers = users.map((user) => ({
-      id: user._id.toString(),
-      ...user.toObject(),
-    }));
+    const formattedUsers = await Promise.all(users.map(async (user) => {
+  const profile = await UserProfile.findOne({ user: user._id });
+
+  const hasPendingProfile =
+    profile &&
+    profile.latestProfile &&
+    JSON.stringify(profile.latestProfile) !== JSON.stringify(profile.approvedProfile);
+
+  return {
+    id: user._id.toString(),
+    ...user.toObject(),
+    hasPendingProfile
+  };
+}));
+
 
     res.status(200).json(formattedUsers);
   } catch (err) {

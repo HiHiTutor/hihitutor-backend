@@ -17,6 +17,14 @@ const UserSchema = new mongoose.Schema({
     required: true,
   },
 
+  // ✅ 證明文件（導師 & 機構通用）
+  organizationDocs: {
+    businessRegistration: { type: String, default: "" }, // 商業登記證
+    addressProof: { type: String, default: "" }          // 地址證明
+  },
+  tutorCertificates: [{ type: String }], // 導師資歷證書（圖片路徑）
+
+
   // ✅ 監護人資訊（當用戶未成年 & 剔選了"監護人"時）
   guardian: {
     name: { type: String },

@@ -4,6 +4,8 @@ const authMiddleware = require("../middleware/authMiddleware");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/User");
 const Case = require("../models/case");
+const { uploadCertificates, uploadOrgDocs } = require("../middleware/upload");
+
 
 // ✅ /users/me：取得當前登入者基本資料 + profile + 所有個案
 router.get("/me", authMiddleware, async (req, res) => {
@@ -37,5 +39,23 @@ router.get("/me", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
+
+// ✅ 導師上載證書 API
+router.post("/:userId/certificates", uploadCertificates.array("certificates", 5), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ error: "找不到用戶" });
+
+    const paths = req.files.map(file => `/uploads/certificates/${file.filename}`);
+    user.tutorCertificates.push(...paths);
+    await user.save();
+
+    res.json({ msg: "✅ 證書已成功上載", files: paths });
+  } catch (err) {
+    console.error("❌ 上載證書失敗:", err.message);
+    res.status(500).json({ error: "上載失敗" });
+  }
+});
+
 
 module.exports = router;

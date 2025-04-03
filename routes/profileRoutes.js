@@ -9,6 +9,8 @@ const User = require("../models/User");
 const UserProfile = require("../models/userProfile");
 const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
+const { uploadOrgDocs } = require("../middleware/upload");
+
 
 // 🧩 上傳設定（共用）
 const makeStorage = (subfolder) =>
@@ -157,13 +159,15 @@ router.put("/approve/:userId", authMiddleware, async (req, res) => {
 // ✅ Admin 查看所有 user 的 profile
 router.get("/all", authMiddleware, async (req, res) => {
   try {
-    const profiles = await UserProfile.find().populate("userId", "email name createdAt");
+    const profiles = await UserProfile.find().populate("user", "email name createdAt").lean();
+
     res.status(200).json(profiles);
   } catch (err) {
-    console.error("❌ 獲取所有 profile 錯誤:", err);
+    console.error("❌ 獲取所有 profile 錯誤:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
+
 
 // ✅ 單一 user 查看 approvedProfile（給 frontend 用）
 router.get("/:userId", async (req, res) => {
@@ -176,6 +180,35 @@ router.get("/:userId", async (req, res) => {
     res.json(profile.approvedProfile);
   } catch (err) {
     console.error("❌ 獲取個人 profile 錯誤:", err);
+    res.status(500).json({ error: "伺服器錯誤" });
+  }
+});
+
+// ✅ 機構上載文件 API（帶錯誤處理）
+router.post("/:userId/organization-docs", (req, res, next) => {
+  uploadOrgDocs(req, res, function (err) {
+    if (err) {
+      console.error("❌ 上載失敗:", err.message);
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    console.log("🧾 req.files", req.files);
+
+    const user = await User.findById(req.params.userId);
+    if (!user) return res.status(404).json({ error: "找不到用戶" });
+
+    user.organizationDocs = {
+  businessRegistration: `/uploads/organizationDocs/${req.files.businessRegistration[0].filename}`,
+  addressProof: `/uploads/organizationDocs/${req.files.addressProof[0].filename}`
+};
+    await user.save();
+
+    res.json({ msg: "✅ 機構文件已成功上載", docs: user.organizationDocs });
+  } catch (err) {
+    console.error("❌ 上載機構文件失敗:", err);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
