@@ -9,6 +9,7 @@ const organizationUpload = require("../middleware/organizationUploadWithTextFiel
 const { verificationCodes } = require("../routes/smsRoutes");
 const router = express.Router();
 require("dotenv").config();
+const Case = require("../models/case");
 
 console.log("✅ userRoutes.js 已載入");
 
@@ -287,6 +288,23 @@ router.post("/create-admin", async (req, res) => {
     await admin.save();
     res.json({ msg: "✅ 已成功建立 admin 帳號", admin });
   } catch (err) {
+    res.status(500).json({ error: "伺服器錯誤" });
+  }
+});
+
+/** 🔵 取得登入用戶發佈的所有個案 */
+router.get("/my-cases", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { postType } = req.query;
+
+    const query = { userId };
+    if (postType) query.postType = postType;
+
+    const myCases = await Case.find(query).sort({ createdAt: -1 });
+    res.status(200).json(myCases);
+  } catch (err) {
+    console.error("❌ 讀取 my-cases 錯誤:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
