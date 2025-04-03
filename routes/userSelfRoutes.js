@@ -57,5 +57,22 @@ router.post("/:userId/certificates", uploadCertificates.array("certificates", 5)
   }
 });
 
+/** 🔵 取得登入用戶發佈的所有個案 */
+router.get("/my-cases", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { postType } = req.query;
+
+    const query = { userId };
+    if (postType) query.postType = postType;
+
+    const myCases = await Case.find(query).sort({ createdAt: -1 });
+    res.status(200).json(myCases);
+  } catch (err) {
+    console.error("❌ 讀取 my-cases 錯誤:", err.message);
+    res.status(500).json({ error: "伺服器錯誤" });
+  }
+});
+
 
 module.exports = router;
