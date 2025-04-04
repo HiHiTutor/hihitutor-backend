@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const verifiedPhones = new Set();
+
 
 // 用 Map 暫存驗證碼（正式應用應該用 Redis）
 const verificationCodes = new Map();
@@ -31,11 +33,15 @@ router.post("/verify-code", (req, res) => {
   if (validCode !== code) return res.status(400).json({ message: "驗證碼錯誤" });
 
   verificationCodes.delete(phone);
+  verifiedPhones.add(phone);
   return res.status(200).json({ message: "驗證成功" });
 });
 
 // ✅ Export router + verificationCodes 一齊導出
 module.exports = {
   router,
-  verificationCodes
+  verificationCodes,
+  verifiedPhones
+  verifiedPhones: new Set()
+
 };

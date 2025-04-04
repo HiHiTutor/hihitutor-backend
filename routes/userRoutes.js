@@ -6,8 +6,7 @@ const User = require("../models/User");
 const UserProfile = require("../models/userProfile");
 const authMiddleware = require("../middleware/authMiddleware");
 const organizationUpload = require("../middleware/organizationUploadWithTextFields");
-const { verificationCodes } = require("../routes/smsRoutes");
-const { verifiedPhones } = require("../routes/smsRoutes");
+const { verificationCodes, verifiedPhones } = require("../routes/smsRoutes");
 const router = express.Router();
 require("dotenv").config();
 
