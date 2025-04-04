@@ -42,6 +42,4 @@ module.exports = {
   router,
   verificationCodes,
   verifiedPhones
-  verifiedPhones: new Set()
-
 };
