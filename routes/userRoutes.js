@@ -7,6 +7,7 @@ const UserProfile = require("../models/userProfile");
 const authMiddleware = require("../middleware/authMiddleware");
 const organizationUpload = require("../middleware/organizationUploadWithTextFields");
 const { verificationCodes } = require("../routes/smsRoutes");
+const { verifiedPhones } = require("../routes/smsRoutes");
 const router = express.Router();
 require("dotenv").config();
 
@@ -30,22 +31,37 @@ router.post(
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-   const { name, birthdate, email, password, phone, userType, verificationCode } = req.body;
+    const { name, birthdate, email, password, phone, userType, verificationCode } = req.body;
 
     try {
-if (!verificationCodes.has(phone)) {
-  return res.status(400).json({ msg: "請先取得驗證碼" });
-}
+      if (!verifiedPhones.has(phone)) {
+        return res.status(400).json({ msg: "請先完成電話驗證" });
+      }
 
-if (verificationCodes.get(phone) !== verificationCode) {
-  return res.status(400).json({ msg: "驗證碼錯誤" });
-}
+      if (verificationCodes.get(phone) !== verificationCode) {
+        return res.status(400).json({ msg: "驗證碼錯誤" });
+      }
 
-// 成功後刪除記錄
-verificationCodes.delete(phone);
+      // 成功後刪除記錄
+      verifiedPhones.delete(phone);
 
       const existing = await User.findOne({ email });
       if (existing) return res.status(400).json({ msg: "該電郵已被註冊" });
+
+      // 🔢 生成自訂 userCode（U-xxxxx / T-xxxxx / ORG-xxxxx）
+      const count = await User.countDocuments({
+        userType,
+        tags: userType === "organization" ? ["institution"] : ["student"]
+      });
+
+      let codePrefix = "";
+      if (userType === "organization") {
+        codePrefix = "ORG";
+      } else {
+        codePrefix = "U";
+      }
+
+      const userCode = `${codePrefix}-${String(count + 1).padStart(5, "0")}`;
 
       const newUser = new User({
         name,
@@ -53,7 +69,8 @@ verificationCodes.delete(phone);
         email,
         phone,
         userType,
-        tags: userType === "organization" ? ["institution"] : ["student"]
+        tags: userType === "organization" ? ["institution"] : ["student"],
+        userCode // ✅ 一定要加
       });
 
       if (userType === "organization") {
@@ -95,6 +112,7 @@ verificationCodes.delete(phone);
         user: {
           id: newUser._id,
           name: newUser.name,
+          userCode: newUser.userCode, // ✅ 顯示出來比你睇
           userType: newUser.userType,
           tags: newUser.tags,
           organizationDocs: newUser.organizationDocs || {}
@@ -106,6 +124,7 @@ verificationCodes.delete(phone);
     }
   }
 );
+
 
 /** 🔵 用戶登入 API（支援 Email 或電話號碼） */
 router.post(
@@ -252,18 +271,25 @@ router.put("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-/** ❌ 刪除用戶 API */
+/** ❌ 刪除用戶 API（只限 Admin） */
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    let user = await User.findById(req.params.id);
+    // ✅ 只限 admin 可刪除
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ msg: "只有 Admin 可以刪除帳戶" });
+    }
+
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ msg: "用戶不存在" });
 
     await User.deleteOne({ _id: req.params.id });
-    res.json({ msg: "用戶已刪除" });
+    res.json({ msg: "✅ 用戶已刪除" });
   } catch (err) {
+    console.error("❌ 刪除用戶錯誤:", err.message);
     res.status(500).send("伺服器錯誤");
   }
 });
+
 
 // 📌 建立臨時 admin 帳號 API（只用一次即可，之後可移除）
 router.post("/create-admin", async (req, res) => {
