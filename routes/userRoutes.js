@@ -32,18 +32,13 @@ router.post(
 
     const { name, birthdate, email, password, phone, userType, verificationCode } = req.body;
 
-    try {
-      if (!verifiedPhones.has(phone)) {
-        return res.status(400).json({ msg: "請先完成電話驗證" });
-      }
+try {
+  if (!verifiedPhones.has(phone)) {
+    return res.status(400).json({ msg: "請先完成電話驗證" });
+  }
 
-      if (verificationCodes.get(phone) !== verificationCode) {
-        return res.status(400).json({ msg: "驗證碼錯誤" });
-      }
-
-      // 成功後刪除記錄
-      verifiedPhones.delete(phone);
-
+  // ✅ 驗證過電話就可以刪除
+  verifiedPhones.delete(phone);
       const existing = await User.findOne({ email });
       if (existing) return res.status(400).json({ msg: "該電郵已被註冊" });
 
