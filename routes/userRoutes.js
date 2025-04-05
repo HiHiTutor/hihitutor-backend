@@ -154,15 +154,14 @@ router.post(
         return res.status(400).json({ msg: "無效的帳號或密碼" });
       }
 
-      const payload = {
-  user: {
-    id: user.id,
-    email: user.email,
-    userCode: user.userCode,
-    userType: user.userType,
-    tags: user.tags || []
-  }
-};
+      let role = "user";
+if (user.tags.includes("admin")) role = "admin";
+else if (user.tags.includes("institution")) role = "organization";
+else if (user.tags.includes("provider")) role = "tutor"; // 二級個人用戶
+else if (user.tags.includes("student")) role = "student"; // 一級個人用戶
+
+const payload = { user: { id: user.id, role } };
+
 const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
 
 
