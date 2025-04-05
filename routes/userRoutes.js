@@ -154,8 +154,17 @@ router.post(
         return res.status(400).json({ msg: "無效的帳號或密碼" });
       }
 
-      const payload = { user: { id: user.id, role: user.role || "user" } };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+      const payload = {
+  user: {
+    id: user.id,
+    email: user.email,
+    userCode: user.userCode,
+    userType: user.userType,
+    tags: user.tags || []
+  }
+};
+const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+
 
       res.json({ token });
 
