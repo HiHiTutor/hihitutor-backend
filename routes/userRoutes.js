@@ -95,23 +95,31 @@ try {
         };
       }
 
-      newUser.password = await bcrypt.hash(password, 10);
-      await newUser.save();
+     newUser.password = await bcrypt.hash(password, 10);
+await newUser.save();
 
-      const token = jwt.sign({ user: { id: newUser.id } }, process.env.JWT_SECRET, { expiresIn: "1h" });
+// 🆕 新增 role 判斷
+let role = "user";
+if (newUser.tags.includes("admin")) role = "admin";
+else if (newUser.tags.includes("institution")) role = "organization";
+else if (newUser.tags.includes("provider")) role = "tutor";
+else if (newUser.tags.includes("student")) role = "student";
 
-      res.json({
-        msg: "✅ 註冊成功",
-        token,
-        user: {
-          id: newUser._id,
-          name: newUser.name,
-          userCode: newUser.userCode, // ✅ 顯示出來比你睇
-          userType: newUser.userType,
-          tags: newUser.tags,
-          organizationDocs: newUser.organizationDocs || {}
-        }
-      });
+const token = jwt.sign({ user: { id: newUser.id, role } }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+res.json({
+  msg: "✅ 註冊成功",
+  token,
+  user: {
+    id: newUser._id,
+    name: newUser.name,
+    userCode: newUser.userCode, // ✅ 顯示出來比你睇
+    userType: newUser.userType,
+    tags: newUser.tags,
+    organizationDocs: newUser.organizationDocs || {}
+  }
+});
+
     } catch (err) {
       console.error("❌ 註冊錯誤:", err.message);
       res.status(500).json({ error: "伺服器錯誤" });
