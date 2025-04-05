@@ -1,10 +1,9 @@
-// /middleware/authMiddleware.js
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 module.exports = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;  // ✅ 要放喺入面
+    const authHeader = req.headers.authorization;
     console.log("🧪 authHeader:", authHeader);
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -19,12 +18,22 @@ module.exports = async (req, res, next) => {
       return res.status(401).json({ error: "無效的 Token，請重新登入" });
     }
 
-    req.user = await User.findById(decoded.user.id).select("-password");
-    console.log("🧪 req.user (from middleware):", req.user);
+    const user = await User.findById(decoded.user.id).select("-password");
+    console.log("🧪 req.user (from middleware):", user);
 
-    if (!req.user) {
+    if (!user) {
       return res.status(401).json({ error: "用戶不存在，請重新登入" });
     }
+
+    // ✅ 加上角色識別
+    let role = "user";
+    if (user.tags.includes("admin")) role = "admin";
+    else if (user.tags.includes("institution")) role = "organization";
+    else if (user.tags.includes("provider")) role = "tutor";
+    else if (user.tags.includes("student")) role = "student";
+
+    req.user = user;
+    req.user.role = role; // 🔥 這一行非常重要
 
     next();
   } catch (err) {
