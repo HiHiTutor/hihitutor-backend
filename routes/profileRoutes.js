@@ -40,11 +40,18 @@ router.post("/:userId/avatar", authMiddleware, uploadAvatar.single("avatar"), as
 
     const fileUrl = `/uploads/avatars/${req.file.filename}`;
     let userProfile = await UserProfile.findOne({ userId });
-    if (!userProfile) {
-      userProfile = new UserProfile({ userId, latestProfile: { avatar: fileUrl } });
-    } else {
-      userProfile.latestProfile.avatar = fileUrl;
+if (!userProfile) {
+  userProfile = new UserProfile({
+    userId,
+    latestProfile: {
+      fullName: "尚未填寫",
+      avatar: fileUrl // ✅ 不用加 fallback，這裡一定有 fileUrl
     }
+  });
+} else {
+  userProfile.latestProfile.avatar = fileUrl; // ✅ 簡潔
+}
+
     await userProfile.save();
 
     res.json({ msg: "✅ 頭像上傳成功", avatar: fileUrl, userProfile });
@@ -84,10 +91,15 @@ router.post("/:userId/certificates", authMiddleware, uploadCertificates.array("c
   }
 });
 
-// ✅ 提交 latestProfile 資料
-router.post("/submit", authMiddleware, async (req, res) => {
+// ✅ Admin 或用戶提交 latestProfile（新版：指定 userId）
+router.post("/:userId/submit", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.params.userId;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "User ID 無效" });
+    }
+
     const {
       fullName,
       gender,
@@ -99,24 +111,18 @@ router.post("/submit", authMiddleware, async (req, res) => {
       certificates = []
     } = req.body;
 
-    // ✅ 安全過濾：不可更新 email / phone 等欄位
-    const forbiddenFields = ["email", "phone", "_id", "password"];
-    for (let key of forbiddenFields) {
-      if (req.body[key]) {
-        return res.status(400).json({ error: `❌ 不可提交 ${key} 欄位` });
-      }
-    }
+   const latest = {
+  fullName,
+  gender,
+  HKID,
+  education,
+  experience,
+  introduction,
+  avatar: profileImage || "/uploads/avatars/default.jpg", // ✅ 記得改名 + fallback
+  certificates: Array.isArray(certificates) ? certificates : []
+};
 
-    const latest = {
-      fullName,
-      gender,
-      HKID,
-      education,
-      experience,
-      introduction,
-      profileImage,
-      certificates: Array.isArray(certificates) ? certificates : []
-    };
+
 
     let userProfile = await UserProfile.findOne({ userId });
     if (userProfile) {
@@ -132,6 +138,7 @@ router.post("/submit", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
+
 
 // ✅ Admin 審批 latestProfile → 複製到 approvedProfile
 router.put("/approve/:userId", authMiddleware, async (req, res) => {
