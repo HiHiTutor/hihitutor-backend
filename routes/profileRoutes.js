@@ -41,13 +41,15 @@ router.post("/:userId/avatar", authMiddleware, uploadAvatar.single("avatar"), as
     const fileUrl = `/uploads/avatars/${req.file.filename}`;
     let userProfile = await UserProfile.findOne({ userId });
 if (!userProfile) {
-  userProfile = new UserProfile({
-    userId,
-    latestProfile: {
-      fullName: "尚未填寫",
-      avatar: fileUrl // ✅ 不用加 fallback，這裡一定有 fileUrl
-    }
-  });
+userProfile = new UserProfile({
+  user: userId,
+  userId,
+  latestProfile: {
+    fullName: "尚未填寫",
+    avatar: fileUrl || "/uploads/avatars/default.jpg"
+  }
+});
+
 } else {
   userProfile.latestProfile.avatar = fileUrl; // ✅ 簡潔
 }
