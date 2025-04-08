@@ -181,4 +181,27 @@ router.post("/upgrade-to-tutor", authMiddleware, async (req, res) => {
   }
 });
 
+// ✅ 取得所有用戶（for Admin 用戶列表）👉 對應 /api/users
+router.get("/", authMiddleware, async (req, res) => {
+  try {
+    const sortField = req.query.sortField || "createdAt";
+    const sortOrder = req.query.sortOrder === "DESC" ? -1 : 1;
+    const sortOption = {};
+    sortOption[sortField] = sortOrder;
+
+    const users = await User.find().select("-password").sort(sortOption);
+    const totalUsers = await User.countDocuments();
+
+    res.set("Access-Control-Expose-Headers", "Content-Range, X-Total-Count");
+    res.set("Content-Range", `users 0-${users.length - 1}/${totalUsers}`);
+    res.set("X-Total-Count", totalUsers);
+
+    res.status(200).json(users);
+  } catch (err) {
+    console.error("❌ 讀取用戶錯誤:", err.message);
+    res.status(500).send("伺服器錯誤");
+  }
+});
+
+
 export default router;
