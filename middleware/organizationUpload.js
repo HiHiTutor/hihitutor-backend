@@ -26,8 +26,8 @@ const storage = multer.diskStorage({
   }
 });
 
-// ✅ 建立 Multer 中介層
-const organizationUpload = multer({
+// ✅ 建立 Multer 實例（可重複使用）
+export const organizationUpload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
@@ -41,7 +41,7 @@ const organizationUpload = multer({
 });
 
 // ✅ 包裝：支援文字欄位處理
-const organizationUploadWithTextFields = (req, res, next) => {
+export const organizationUploadWithTextFields = (req, res, next) => {
   const handler = organizationUpload.fields([
     { name: "br", maxCount: 1 },
     { name: "cr", maxCount: 1 },
@@ -63,6 +63,3 @@ const organizationUploadWithTextFields = (req, res, next) => {
     next();
   });
 };
-
-// ✅ 匯出（ESM方式）
-export default organizationUploadWithTextFields;

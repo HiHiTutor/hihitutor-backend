@@ -1,8 +1,9 @@
-const express = require("express");
-const { check, validationResult } = require("express-validator");
-const Tutor = require("../models/Tutor");
-const TutorCase = require("../models/TutorCase");
-const authMiddleware = require("../middleware/authMiddleware"); // 引入身份驗證
+import express from "express";
+import { check, validationResult } from "express-validator";
+import Tutor from "../models/Tutor.js";
+import TutorCase from "../models/TutorCase.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+
 const router = express.Router();
 
 // ✅ **獲取所有導師 (GET /api/tutors)**
@@ -20,7 +21,7 @@ router.get("/", async (req, res) => {
 router.post(
   "/",
   [
-    authMiddleware, // 需要登入
+    authMiddleware,
     check("name", "請輸入導師名稱").not().isEmpty(),
     check("email", "請輸入有效的電郵").isEmail(),
     check("subject", "請輸入教授科目").not().isEmpty(),
@@ -54,7 +55,7 @@ router.post(
 // ✅ **獲取所有補習個案 (GET /api/tutors/cases)**
 router.get("/cases", async (req, res) => {
   try {
-    const cases = await TutorCase.find().populate("tutor", "name subject"); // 取得導師名稱
+    const cases = await TutorCase.find().populate("tutor", "name subject");
     res.json(cases);
   } catch (err) {
     console.error(err.message);
@@ -81,7 +82,7 @@ router.post(
     const { subject, description, hourlyRate, location, availableTimes } = req.body;
 
     try {
-      let tutor = await Tutor.findOne({ user: req.user.id });
+      const tutor = await Tutor.findOne({ user: req.user.id });
       if (!tutor) {
         return res.status(404).json({ msg: "請先註冊為導師" });
       }

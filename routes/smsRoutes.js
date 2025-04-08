@@ -16,7 +16,7 @@ router.post("/send-code", (req, res) => {
 
   return res.status(200).json({
     message: "驗證碼已發送（開發模式）",
-    code: code.toString() // 測試用，正式記得唔好回傳 code
+    code: code.toString()
   });
 });
 
@@ -35,5 +35,6 @@ router.post("/verify-code", (req, res) => {
   return res.status(200).json({ message: "驗證成功" });
 });
 
-// ✅ ESM 專用導出方式
-export { router as default, verificationCodes, verifiedPhones };
+// ✅ 正確的 ESM 匯出方式
+export default router;
+export { verificationCodes, verifiedPhones };

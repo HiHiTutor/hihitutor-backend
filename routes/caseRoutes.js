@@ -1,10 +1,11 @@
-console.log("✅ caseRoutes 加載成功");
-const express = require("express");
-const { check, validationResult } = require("express-validator");
-const mongoose = require("mongoose");
-const Case = require("../models/case");
-const authMiddleware = require("../middleware/authMiddleware");
+import express from "express";
+import { check, validationResult } from "express-validator";
+import mongoose from "mongoose";
+import Case from "../models/case.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+
 const router = express.Router();
+
 
 /** ✅ 審批個案 */
 router.put("/:id/approve", authMiddleware, async (req, res) => {

@@ -7,7 +7,8 @@ import User from "../models/User.js";
 import UserProfile from "../models/userProfile.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import organizationUpload from "../middleware/organizationUploadWithTextFields.js";
-import { verificationCodes, verifiedPhones } from "../routes/smsRoutes.js";
+import { verifiedPhones } from "./smsRoutes.js"; // 或 "../routes/smsRoutes.js" 視乎檔案位置
+
 
 dotenv.config();
 

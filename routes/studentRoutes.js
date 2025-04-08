@@ -1,14 +1,15 @@
-const express = require("express");
-const { check, validationResult } = require("express-validator");
-const Student = require("../models/Student");
-const authMiddleware = require("../middleware/authMiddleware"); // 身份驗證
+import express from "express";
+import { check, validationResult } from "express-validator";
+import Student from "../models/Student.js"; // ← 加 `.js`
+import authMiddleware from "../middleware/authMiddleware.js"; // ← 加 `.js`
+
 const router = express.Router();
 
 // ✅ **新增學生 API**
 router.post(
   "/",
   [
-    authMiddleware, // 需要登入才能新增學生
+    authMiddleware,
     check("name", "請輸入學生名稱").not().isEmpty(),
     check("email", "請輸入有效的電郵").isEmail(),
     check("age", "請輸入學生年齡").isInt({ min: 3, max: 100 }),
@@ -23,7 +24,7 @@ router.post(
     const { name, email, age, subjects } = req.body;
 
     try {
-      let student = new Student({ 
+      const student = new Student({ 
         name, 
         email, 
         age, 
