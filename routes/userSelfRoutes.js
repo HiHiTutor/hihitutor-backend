@@ -1,10 +1,11 @@
-const express = require("express");
+import express from "express";
+import authMiddleware from "../middleware/authMiddleware.js";
+import UserProfile from "../models/userProfile.js";
+import User from "../models/User.js";
+import Case from "../models/case.js";
+import { uploadCertificates, uploadOrgDocs } from "../middleware/upload.js";
+
 const router = express.Router();
-const authMiddleware = require("../middleware/authMiddleware");
-const UserProfile = require("../models/userProfile");
-const User = require("../models/User");
-const Case = require("../models/case");
-const { uploadCertificates, uploadOrgDocs } = require("../middleware/upload");
 
 // ✅ 角色邏輯：角色繼承
 function getRolesFromTags(tags = []) {
