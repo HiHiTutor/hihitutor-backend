@@ -96,7 +96,7 @@ router.post(
       let role = "user";
       if (newUser.tags.includes("admin")) role = "admin";
       else if (newUser.tags.includes("institution")) role = "organization";
-      else if (newUser.tags.includes("provider")) role = "tutor";
+      else if (newUser.tags.includes("tutor")) role = "tutor";
       else if (newUser.tags.includes("student")) role = "student";
 
       const token = jwt.sign({ user: { id: newUser.id, role } }, process.env.JWT_SECRET, { expiresIn: "1h" });
@@ -143,7 +143,7 @@ router.post(
       let role = "user";
       if (user.tags.includes("admin")) role = "admin";
       else if (user.tags.includes("institution")) role = "organization";
-      else if (user.tags.includes("provider")) role = "tutor";
+      else if (user.tags.includes("tutor")) role = "tutor";
       else if (user.tags.includes("student")) role = "student";
 
       const payload = { user: { id: user.id, role } };
@@ -157,129 +157,6 @@ router.post(
   }
 );
 
-router.post("/refresh-token", async (req, res) => {
-  const { refreshToken } = req.body;
-  if (!refreshToken) return res.status(401).json({ error: "沒有提供 Refresh Token" });
-
-  try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
-    if (!decoded || !decoded.user) return res.status(403).json({ error: "Refresh Token 無效，請重新登入" });
-
-    const newToken = jwt.sign({ user: decoded.user }, process.env.JWT_SECRET, { expiresIn: "1h" });
-    res.json({ token: newToken });
-  } catch (err) {
-    return res.status(403).json({ error: "Refresh Token 無效，請重新登入" });
-  }
-});
-
-router.get("/", authMiddleware, async (req, res) => {
-  try {
-    const sortField = req.query.sortField || "createdAt";
-    const sortOrder = req.query.sortOrder === "DESC" ? -1 : 1;
-    const sortOption = {};
-    sortOption[sortField] = sortOrder;
-
-    const users = await User.find().select("-password").sort(sortOption);
-    const totalUsers = await User.countDocuments();
-
-    res.set("Access-Control-Expose-Headers", "Content-Range, X-Total-Count");
-    res.set("Content-Range", `users 0-${users.length - 1}/${totalUsers}`);
-    res.set("X-Total-Count", totalUsers);
-
-    const formattedUsers = await Promise.all(users.map(async (user) => {
-      const profile = await UserProfile.findOne({ user: user._id });
-      const hasPendingProfile = profile &&
-        profile.latestProfile &&
-        JSON.stringify(profile.latestProfile) !== JSON.stringify(profile.approvedProfile);
-
-      return {
-        id: user._id.toString(),
-        ...user.toObject(),
-        hasPendingProfile
-      };
-    }));
-
-    res.status(200).json(formattedUsers);
-  } catch (err) {
-    res.status(500).send("伺服器錯誤");
-  }
-});
-
-router.get("/:id", authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select("-password");
-    if (!user) return res.status(404).json({ msg: "用戶不存在" });
-
-    const userProfile = await UserProfile.findOne({ userId: user._id });
-
-    res.json({
-      id: user._id.toString(),
-      ...user.toObject(),
-      profile: userProfile?.approvedProfile || null
-    });
-  } catch (err) {
-    res.status(500).send("伺服器錯誤");
-  }
-});
-
-router.put("/:id", authMiddleware, async (req, res) => {
-  try {
-    const { id } = req.params;
-    let updateData = req.body;
-    if ("password" in updateData) delete updateData.password;
-
-    const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
-    if (!updatedUser) return res.status(404).json({ msg: "用戶不存在" });
-
-    res.status(200).json({ id: updatedUser._id.toString(), ...updatedUser.toObject() });
-  } catch (err) {
-    res.status(500).json({ msg: "伺服器錯誤，無法更新用戶" });
-  }
-});
-
-router.delete("/:id", authMiddleware, async (req, res) => {
-  try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ msg: "只有 Admin 可以刪除帳戶" });
-    }
-
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ msg: "用戶不存在" });
-
-    await User.deleteOne({ _id: req.params.id });
-    res.json({ msg: "✅ 用戶已刪除" });
-  } catch (err) {
-    console.error("❌ 刪除用戶錯誤:", err.message);
-    res.status(500).send("伺服器錯誤");
-  }
-});
-
-router.post("/create-admin", async (req, res) => {
-  try {
-    const existing = await User.findOne({ email: "admin@example.com" });
-    if (existing) return res.status(400).json({ msg: "admin@example.com 已存在" });
-
-    const hashedPassword = await bcrypt.hash("88888888", 10);
-
-    const admin = new User({
-      name: "Admin",
-      email: "admin@example.com",
-      password: hashedPassword,
-      birthdate: new Date(1990, 0, 1),
-      phone: "91234567",
-      tags: ["admin"],
-      userType: "individual",
-      createdAt: new Date()
-    });
-
-    await admin.save();
-    res.json({ msg: "✅ 已成功建立 admin 帳號", admin });
-  } catch (err) {
-    res.status(500).json({ error: "伺服器錯誤" });
-  }
-});
-
-// ✅ 升級為導師 API
 router.post("/upgrade-to-tutor", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -288,11 +165,10 @@ router.post("/upgrade-to-tutor", authMiddleware, async (req, res) => {
     if (!user) return res.status(404).json({ msg: "找不到用戶" });
     if (user.userType !== "individual") return res.status(400).json({ msg: "只有個人用戶可升級為導師" });
 
-    if (!user.tags.includes("provider")) {
-      user.tags.push("provider");
+    if (!user.tags.includes("tutor")) {
+      user.tags.push("tutor");
 
-      // 升級 userCode（如由 U-00001 ➜ T-00088）
-      const count = await User.countDocuments({ tags: { $in: ["provider"] } });
+      const count = await User.countDocuments({ tags: "tutor" });
       user.userCode = `T-${String(count + 1).padStart(5, "0")}`;
 
       await user.save();
@@ -304,6 +180,5 @@ router.post("/upgrade-to-tutor", authMiddleware, async (req, res) => {
     res.status(500).json({ msg: "伺服器錯誤，升級失敗" });
   }
 });
-
 
 export default router;
