@@ -279,4 +279,31 @@ router.post("/create-admin", async (req, res) => {
   }
 });
 
+// ✅ 升級為導師 API
+router.post("/upgrade-to-tutor", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) return res.status(404).json({ msg: "找不到用戶" });
+    if (user.userType !== "individual") return res.status(400).json({ msg: "只有個人用戶可升級為導師" });
+
+    if (!user.tags.includes("provider")) {
+      user.tags.push("provider");
+
+      // 升級 userCode（如由 U-00001 ➜ T-00088）
+      const count = await User.countDocuments({ tags: { $in: ["provider"] } });
+      user.userCode = `T-${String(count + 1).padStart(5, "0")}`;
+
+      await user.save();
+    }
+
+    res.status(200).json({ msg: "✅ 成功升級為導師", user });
+  } catch (err) {
+    console.error("❌ 升級導師失敗:", err);
+    res.status(500).json({ msg: "伺服器錯誤，升級失敗" });
+  }
+});
+
+
 export default router;
