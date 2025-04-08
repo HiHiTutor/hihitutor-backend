@@ -167,17 +167,17 @@ router.put("/approve/:userId", authMiddleware, async (req, res) => {
     await userProfile.save();
 
     // ✅ 更新 userCode 與 tags
-    const user = await User.findById(userId);
-    if (user) {
-      if (user.userCode.startsWith("U-")) {
-        const count = await User.countDocuments({ tags: "provider" });
-        user.userCode = `T-${String(count + 1).padStart(5, "0")}`;
-      }
-      if (!user.tags.includes("provider")) {
-        user.tags.push("provider");
-      }
-      await user.save();
-    }
+const user = await User.findById(userId);
+if (user) {
+  if (user.userCode.startsWith("U-")) {
+    const count = await User.countDocuments({ tags: "tutor" });
+    user.userCode = `T-${String(count + 1).padStart(5, "0")}`;
+  }
+  if (!user.tags.includes("tutor")) {
+    user.tags.push("tutor");
+  }
+  await user.save();
+}
 
     res.json({ msg: "✅ Profile 已成功審批，導師升級完成" });
   } catch (err) {
