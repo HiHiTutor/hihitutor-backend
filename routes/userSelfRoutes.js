@@ -6,7 +6,6 @@ const User = require("../models/User");
 const Case = require("../models/case");
 const { uploadCertificates, uploadOrgDocs } = require("../middleware/upload");
 
-// ✅ /users/me：取得當前登入者基本資料 + profile + 所有個案
 // ✅ 角色邏輯：角色繼承
 function getRolesFromTags(tags = []) {
   const roles = new Set();
@@ -30,6 +29,7 @@ function getMainRole(tags = []) {
   return "user";
 }
 
+// ✅ /users/me：取得當前登入者基本資料 + profile + 所有個案
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const user = req.user;
@@ -49,16 +49,15 @@ router.get("/me", authMiddleware, async (req, res) => {
       console.warn("⚠️ 找不到 case 或出錯:", err.message);
     }
 
-    // ✅ 統一身份角色邏輯
     const roles = getRolesFromTags(user.tags);
     const mainRole = getMainRole(user.tags);
 
     res.json({
       id: user._id.toString(),
       ...plainUser,
-      role: mainRole, // ✅ 舊版兼容
-      mainRole,       // ✅ 主身份
-      roles,          // ✅ 身份列表
+      role: mainRole,
+      mainRole,
+      roles,
       isTutor: roles.includes("tutor"),
       profile: userProfile?.approvedProfile || null,
       cases: userCases
@@ -68,28 +67,6 @@ router.get("/me", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
-
-    // ✅ 判斷 role
-    let role = "user";
-    if (user.tags.includes("admin")) role = "admin";
-    else if (user.tags.includes("institution")) role = "organization";
-    else if (user.tags.includes("tutor")) role = "tutor";
-    else if (user.tags.includes("student")) role = "student";
-
-    res.json({
-      id: user._id.toString(),
-      ...plainUser,
-      role,                         // ✅ 新增 role
-      isTutor: user.tags.includes("tutor"), // ✅ 新增 isTutor
-      profile: userProfile?.approvedProfile || null,
-      cases: userCases
-    });
-  } catch (err) {
-    console.error("❌ /me 錯誤:", err.message);
-    res.status(500).json({ error: "伺服器錯誤" });
-  }
-});
-
 
 // ✅ 導師上載證書 API
 router.post("/:userId/certificates", uploadCertificates.array("certificates", 5), async (req, res) => {
@@ -124,6 +101,5 @@ router.get("/my-cases", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
-
 
 module.exports = router;
