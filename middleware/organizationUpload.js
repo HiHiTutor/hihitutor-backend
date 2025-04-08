@@ -1,8 +1,14 @@
-// 📁 C:\Projects\HiHiTutor\hihitutor-backend\middleware\organizationUpload.js
+// 📁 middleware/organizationUpload.js
 
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// ⛏️ 解決 __dirname 問題
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // 📂 建立上傳目的地資料夾
 const orgDocsPath = path.join(__dirname, "../uploads/organizationDocs");
@@ -23,7 +29,7 @@ const storage = multer.diskStorage({
 // ✅ 建立 Multer 中介層
 const organizationUpload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB 限制
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
     if (allowedTypes.includes(file.mimetype)) {
@@ -34,7 +40,7 @@ const organizationUpload = multer({
   }
 });
 
-// ✅【新增】中介層包裝（支援接收文字欄位）
+// ✅ 包裝：支援文字欄位處理
 const organizationUploadWithTextFields = (req, res, next) => {
   const handler = organizationUpload.fields([
     { name: "br", maxCount: 1 },
@@ -48,7 +54,6 @@ const organizationUploadWithTextFields = (req, res, next) => {
       return res.status(400).json({ error: "上傳文件失敗，請確認格式與大小" });
     }
 
-    // ✅ 保證 req.body 內文字欄位正確轉換成 string（因為 multer 可能包裝為 array）
     for (const key in req.body) {
       if (Array.isArray(req.body[key])) {
         req.body[key] = req.body[key][0];
@@ -59,5 +64,5 @@ const organizationUploadWithTextFields = (req, res, next) => {
   });
 };
 
-// ✅ 匯出新版本
-module.exports = organizationUploadWithTextFields;
+// ✅ 匯出（ESM方式）
+export default organizationUploadWithTextFields;
