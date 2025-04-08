@@ -45,7 +45,6 @@ router.post("/:userId/avatar", authMiddleware, uploadAvatar.single("avatar"), as
 
     const fileUrl = `/uploads/avatars/${req.file.filename}`;
 
-    // ✅ 用正確欄位查找：user（而非 userId）
     let userProfile = await UserProfile.findOne({ user: userId });
     
     if (!userProfile) {
@@ -63,7 +62,7 @@ router.post("/:userId/avatar", authMiddleware, uploadAvatar.single("avatar"), as
         avatar: fileUrl || "/uploads/avatars/default.jpg"
       };
     }
-    
+
     await userProfile.save();    
 
     res.json({ msg: "✅ 頭像上傳成功", avatar: fileUrl, userProfile });
@@ -84,10 +83,7 @@ router.post("/:userId/certificates", authMiddleware, uploadCertificates.array("c
     const fileUrls = req.files.map(file => `/uploads/certificates/${file.filename}`);
     let userProfile = await UserProfile.findOne({ userId });
     if (!userProfile) {
-      userProfile = new UserProfile({
-        userId,
-        latestProfile: { certificates: fileUrls }
-      });
+      userProfile = new UserProfile({ userId, latestProfile: { certificates: fileUrls } });
     } else {
       userProfile.latestProfile.certificates = [
         ...(userProfile.latestProfile.certificates || []),
@@ -165,7 +161,20 @@ router.put("/approve/:userId", authMiddleware, async (req, res) => {
     userProfile.approvedProfile = userProfile.latestProfile;
     await userProfile.save();
 
-    res.json({ msg: "✅ Profile 已成功審批" });
+    // ✅ 更新 userCode 與 tags
+    const user = await User.findById(userId);
+    if (user) {
+      if (user.userCode.startsWith("U-")) {
+        const count = await User.countDocuments({ tags: "provider" });
+        user.userCode = `T-${String(count + 1).padStart(5, "0")}`;
+      }
+      if (!user.tags.includes("provider")) {
+        user.tags.push("provider");
+      }
+      await user.save();
+    }
+
+    res.json({ msg: "✅ Profile 已成功審批，導師升級完成" });
   } catch (err) {
     console.error("❌ 審批 profile 錯誤:", err);
     res.status(500).json({ error: "伺服器錯誤" });
