@@ -8,7 +8,7 @@ const verificationCodes = new Map();
 
 // 🔹 POST /api/sms/send-code
 router.post("/send-code", (req, res) => {
-  const { phone } = req.body;
+  const phone = req.body.phone || req.body.phoneNumber;
   if (!phone) return res.status(400).json({ message: "請提供電話號碼" });
 
   const code = Math.floor(100000 + Math.random() * 900000); // 6位數
