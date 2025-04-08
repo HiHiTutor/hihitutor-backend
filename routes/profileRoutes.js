@@ -1,16 +1,21 @@
-// 📁 C:\Projects\HiHiTutor\hihitutor-backend\routes\profileRoutes.js
-const express = require("express");
-const mongoose = require("mongoose");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+import express from "express";
+import mongoose from "mongoose";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
-const User = require("../models/User");
-const UserProfile = require("../models/userProfile");
-const authMiddleware = require("../middleware/authMiddleware");
+import User from "../models/User.js";
+import UserProfile from "../models/userProfile.js";
+import authMiddleware from "../middleware/authMiddleware.js";
+import { uploadOrgDocs } from "../middleware/upload.js";
+
 const router = express.Router();
-const { uploadOrgDocs } = require("../middleware/upload");
 
+// ✅ 解決 __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // 🧩 上傳設定（共用）
 const makeStorage = (subfolder) =>
@@ -39,22 +44,27 @@ router.post("/:userId/avatar", authMiddleware, uploadAvatar.single("avatar"), as
     }
 
     const fileUrl = `/uploads/avatars/${req.file.filename}`;
-    let userProfile = await UserProfile.findOne({ userId });
-if (!userProfile) {
-userProfile = new UserProfile({
-  user: userId,
-  userId,
-  latestProfile: {
-    fullName: "尚未填寫",
-    avatar: fileUrl || "/uploads/avatars/default.jpg"
-  }
-});
 
-} else {
-  userProfile.latestProfile.avatar = fileUrl; // ✅ 簡潔
-}
-
-    await userProfile.save();
+    // ✅ 用正確欄位查找：user（而非 userId）
+    let userProfile = await UserProfile.findOne({ user: userId });
+    
+    if (!userProfile) {
+      userProfile = new UserProfile({
+        user: userId,
+        userId,
+        latestProfile: {
+          fullName: "尚未填寫",
+          avatar: fileUrl || "/uploads/avatars/default.jpg"
+        }
+      });
+    } else {
+      userProfile.latestProfile = {
+        ...userProfile.latestProfile,
+        avatar: fileUrl || "/uploads/avatars/default.jpg"
+      };
+    }
+    
+    await userProfile.save();    
 
     res.json({ msg: "✅ 頭像上傳成功", avatar: fileUrl, userProfile });
   } catch (err) {
@@ -113,18 +123,16 @@ router.post("/:userId/submit", authMiddleware, async (req, res) => {
       certificates = []
     } = req.body;
 
-   const latest = {
-  fullName,
-  gender,
-  HKID,
-  education,
-  experience,
-  introduction,
-  avatar: profileImage || "/uploads/avatars/default.jpg", // ✅ 記得改名 + fallback
-  certificates: Array.isArray(certificates) ? certificates : []
-};
-
-
+    const latest = {
+      fullName,
+      gender,
+      HKID,
+      education,
+      experience,
+      introduction,
+      avatar: profileImage || "/uploads/avatars/default.jpg",
+      certificates: Array.isArray(certificates) ? certificates : []
+    };
 
     let userProfile = await UserProfile.findOne({ userId });
     if (userProfile) {
@@ -140,7 +148,6 @@ router.post("/:userId/submit", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
-
 
 // ✅ Admin 審批 latestProfile → 複製到 approvedProfile
 router.put("/approve/:userId", authMiddleware, async (req, res) => {
@@ -169,14 +176,12 @@ router.put("/approve/:userId", authMiddleware, async (req, res) => {
 router.get("/all", authMiddleware, async (req, res) => {
   try {
     const profiles = await UserProfile.find().populate("user", "email name createdAt").lean();
-
     res.status(200).json(profiles);
   } catch (err) {
     console.error("❌ 獲取所有 profile 錯誤:", err.message);
     res.status(500).json({ error: "伺服器錯誤" });
   }
 });
-
 
 // ✅ 單一 user 查看 approvedProfile（給 frontend 用）
 router.get("/:userId", async (req, res) => {
@@ -210,9 +215,9 @@ router.post("/:userId/organization-docs", (req, res, next) => {
     if (!user) return res.status(404).json({ error: "找不到用戶" });
 
     user.organizationDocs = {
-  businessRegistration: `/uploads/organizationDocs/${req.files.businessRegistration[0].filename}`,
-  addressProof: `/uploads/organizationDocs/${req.files.addressProof[0].filename}`
-};
+      businessRegistration: `/uploads/organizationDocs/${req.files.businessRegistration[0].filename}`,
+      addressProof: `/uploads/organizationDocs/${req.files.addressProof[0].filename}`
+    };
     await user.save();
 
     res.json({ msg: "✅ 機構文件已成功上載", docs: user.organizationDocs });
@@ -222,4 +227,4 @@ router.post("/:userId/organization-docs", (req, res, next) => {
   }
 });
 
-module.exports = router;
+export default router;

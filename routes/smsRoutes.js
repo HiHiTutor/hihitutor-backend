@@ -1,10 +1,8 @@
-const express = require("express");
+import express from "express";
+
 const router = express.Router();
 const verifiedPhones = new Set();
-
-
-// 用 Map 暫存驗證碼（正式應用應該用 Redis）
-const verificationCodes = new Map();
+const verificationCodes = new Map(); // 用 Map 暫存驗證碼（正式應用應該用 Redis）
 
 // 🔹 POST /api/sms/send-code
 router.post("/send-code", (req, res) => {
@@ -37,9 +35,5 @@ router.post("/verify-code", (req, res) => {
   return res.status(200).json({ message: "驗證成功" });
 });
 
-// ✅ Export router + verificationCodes 一齊導出
-module.exports = {
-  router,
-  verificationCodes,
-  verifiedPhones
-};
+// ✅ ESM 專用導出方式
+export { router as default, verificationCodes, verifiedPhones };

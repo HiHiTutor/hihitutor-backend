@@ -1,0 +1,81 @@
+[33mc01d2a3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m 🐛 fix: 修正 submit profile 雙 if 錯誤
+[33m08644e0[m 🐛 修正 profile 提交時缺少 user 欄位，避免 validation failed
+[33m9d0cf11[m 🐛 fix: add user field when creating UserProfile
+[33mee1abea[m ✅ 加入 fallback 頭像邏輯 + 修正 profileRoutes 儲存條件
+[33m0228013[m 🔐 修正 authMiddleware.js 加入 req.user.role 支援
+[33m4269f4f[m 🔐 註冊時同步判斷 user role 並加入 JWT payload，與登入邏輯一致
+[33m6e01adc[m 🔐 修正 login API，根據 tags 決定 JWT payload 中的 role 欄位
+[33m6da8ea3[m 🔐 login token 加入 userCode, userType, tags 等欄位以便識別身份
+[33me7ede0d[m 🛠️ 移除註冊時的驗證碼重複驗證，只檢查 verifiedPhones Set
+[33m1d0e759[m ✅ 修正 smsRoutes.js 重複導出 verifiedPhones
+[33m26d4107[m 🔥 修正 smsRoutes.js 導出 verifiedPhones，修正 userRoutes.js 中導入語法
+[33m5497196[m 🚫 限制刪除用戶僅限 admin 權限
+[33mcceadda[m 新增 /public 路由，允許未登入用戶查看公開個案
+[33mc41c399[m ✨ 新增公開個案 API：未登入也可讀取 /api/cases/public
+[33mf475458[m ✨ 新增 /api/cases/public：允許未登入用戶查看已審批個案
+[33mf08d83c[m 🔧 更新 Case Schema + Route：加入 createdBy、matchedTutor 欄位
+[33m02c5149[m fix: add CORS preflight support for Render
+[33m6b13335[m Trigger redeploy
+[33m5616d62[m ✅ 修正 my-cases router：使用 createdBy 而非 userId
+[33mdf8c994[m ✅ 移除 userRoutes 中 my-cases，轉移到 userSelfRoutes
+[33me7e12c2[m feat: 新增 /api/self-users/my-cases 並移除重複 caseRoutes /my
+[33mb6b5a89[m 🔥 修正 GET /api/profiles/all 的錯誤，修正 populate 欄位
+[33m7269261[m feat: /me API now returns profile and user cases
+[33m89e5114[m chore: update .gitignore to exclude .env and seed scripts
+[33m8226fa7[m fix: add Vercel URLs to CORS whitelist
+[33m25409e6[m fix: correct case-sensitive import for case.js
+[33m9ccbc2f[m fix: rename Case.js to case.js for Linux compatibility
+[33m66a29d2[m fix: remove invalid module.exports from server.js
+[33m38055cd[m fix: Rename Case.js to case.js to fix Linux case sensitivity issue
+[33m8cd755a[m ♻️ 調整 /me 與 /my 為 /self-users 路由結構
+[33m986ba3c[m ✅ 新增 userSelfRoutes 路由註冊到 server.js
+[33m691ba51[m 🛠 修正 smsRoutes export 及 server.js 引入 router 解構問題
+[33m117fd99[m 🐛 修正 smsRoutes 掛載錯誤
+[33m9e83917[m ✅ 修正 smsRoutes export 為正確 middleware function
+[33m81eea81[m ♻️ 調整 server.js 結構及格式，保留所有功能
+[33m78b18ac[m 🧪 加入 /test-plain 最簡測試 API
+[33m1912207[m 🧪 測試 /me 路由（跳過 middleware）
+[33m5c10b46[m 🔧 測試最簡單 /me API
+[33m03db22b[m 🐞 深層 Debug /api/users/me response 結構
+[33mdc532b5[m 🔥 修正 /me 路由避免 mongoose object 出錯
+[33m81a8afe[m 🧪 測試 /me API 最簡回應
+[33m97a64d8[m 🔥 最終修正 /me API，返回純 JSON 結構
+[33m11e0a4a[m ✅ 修正 /me 回傳欄位，解決 ObjectId 導致伺服器錯誤問題
+[33mc63480f[m 🔥 修正 /me ObjectId 展開問題，改為手動回傳欄位
+[33m6aba855[m 🛠️ Remove spread from /me response to fix 500 error
+[33m5d7f018[m 🚑 移除 plainUser spread，避免 Mongoose 對象造成 500 錯誤
+[33m8e87180[m 🔥 強化 /api/users/me 的 toObject() 處理，避免伺服器錯誤
+[33m126de57[m 🐞 Fix: /me API - 修正非 Mongoose Document 導致 toObject() 出錯
+[33mcd74d6c[m ✅ Fix: /me handler 支援非 Document user 對象
+[33m6d61709[m 🐛 Fix: /api/users/me null profile 防爆錯
+[33m3e5b477[m 🐛 Fix: /me route handles null userProfile safely
+[33md51ad63[m 🐛 Fix: Prevent crash when userProfile is null in /me
+[33mbb88bdc[m 🔧 Fix: avoid double query in /api/users/me
+[33m30b15a5[m 🐞 Fix: ensure authHeader defined inside middleware
+[33mec9ea40[m 🐞 Fix /me route to properly extract userId
+[33m702e517[m 🔧 Fix /api/users/me route to support id or _id
+[33m94f5e02[m 🧪 加 log 檢查 JWT Token 傳入情況
+[33m6b15a16[m 🧪 /me 加 req.user log 排查問題
+[33me49c2e9[m 🐛 修正 authHeader 未定義錯誤
+[33mdfe81cb[m 🔧 Add debug logs for /api/users/me to check req.user
+[33m21771c2[m 🐛 debug /me 錯誤 - 加入錯誤訊息 log
+[33mcb00114[m 🔥 修正 /me 錯誤：admin 無 profile 時容錯
+[33m9434cdf[m 🔧 修正 /api/users/me 用 req.user
+[33m3f768e3[m 🔥 修正 smsRoutes 匯入錯誤（Router.use requires middleware）
+[33m0d62caa[m ✅ 加入驗證碼邏輯 & /me API
+[33m50f5f91[m 新增 /api/cases/my，根據登入身份回傳導師或學生的個案
+[33m88aff6c[m 新增 /api/users/me API，用 JWT Token 取得當前登入用戶
+[33m9111c79[m 🚀 移動 smsRoutes 註冊位置到 MongoDB 連接後
+[33mb8d0de6[m feat: 支援用 identifier (email or phone) 登入
+[33mcce71c0[m fix: 修正 userRoutes 登入註冊路由不需 token 驗證
+[33ma1007a2[m fix: 修正 CORS 設定語法錯誤
+[33m16a7e29[m chore: 設定 CORS 允許前端 render 域名
+[33md0d65e8[m fix: 修正 /api/cases 排序 id 對應 _id
+[33m5b4c716[m fix: correct / route and remove duplicates
+[33mdb74293[m fix: tidy up route definitions and add root / message
+[33mba71d2a[m Update profileRoutes.js
+[33m949bf9f[m Update userRoutes.js
+[33m8d3d5ae[m Update userRoutes.js
+[33m563162d[m Update userRoutes.js
+[33m9a476c4[m Update server.js
+[33m2bcad99[m Initial commit for backend
