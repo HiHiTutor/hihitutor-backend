@@ -130,12 +130,17 @@ router.post("/:userId/submit", authMiddleware, async (req, res) => {
       certificates: Array.isArray(certificates) ? certificates : []
     };
 
-    let userProfile = await UserProfile.findOne({ userId });
-    if (userProfile) {
-      userProfile.latestProfile = latest;
-    } else {
-      userProfile = new UserProfile({ userId, latestProfile: latest });
-    }
+let userProfile = await UserProfile.findOne({ user: userId }); // ✅ 查找時也改為 user
+if (userProfile) {
+  userProfile.latestProfile = latest;
+} else {
+  userProfile = new UserProfile({
+    user: userId,              // ✅ 補返必填欄位
+    userId,
+    latestProfile: latest
+  });
+}
+
 
     await userProfile.save();
     res.status(200).json({ msg: "✅ Profile 已提交，待審批" });
