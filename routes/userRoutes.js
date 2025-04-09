@@ -216,6 +216,25 @@ router.get("/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// ✅ 更新單一用戶（for Admin 編輯 user 資料）
+router.put("/:id", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const updates = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updates, {
+      new: true,
+    }).select("-password");
+
+    if (!updatedUser) return res.status(404).json({ msg: "找不到用戶" });
+
+    res.json({ msg: "✅ 用戶已更新", user: updatedUser });
+  } catch (err) {
+    console.error("❌ 更新用戶失敗:", err.message);
+    res.status(500).json({ msg: "伺服器錯誤" });
+  }
+});
+
 
 
 export default router;
