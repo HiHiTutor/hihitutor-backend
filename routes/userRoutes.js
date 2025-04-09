@@ -54,6 +54,41 @@ router.post(
       const codePrefix = userType === "organization" ? "ORG" : "U";
       const userCode = `${codePrefix}-${String(count + 1).padStart(5, "0")}`;
 
+// 註冊時加入以下邏輯，放在檢查 verifiedPhones 後：
+const existingUser = await User.findOne({ phone });
+
+if (existingUser && existingUser.status === "active") {
+  return res.status(400).json({ msg: "此電話號碼已被使用，請勿重複註冊。" });
+}
+
+if (existingUser && existingUser.status === "inactive") {
+  // 自動復效帳戶
+  existingUser.status = "active";
+  existingUser.name = name;
+  existingUser.birthdate = birthdate;
+  existingUser.email = email;
+  existingUser.password = await bcrypt.hash(password, 10);
+  existingUser.userType = userType;
+  existingUser.tags = userType === "organization" ? ["institution"] : ["student"];
+
+  await existingUser.save();
+
+  const token = jwt.sign({ user: { id: existingUser.id, role: "student" } }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+  return res.json({
+    msg: "✅ 帳戶已復效並成功登入",
+    token,
+    user: {
+      id: existingUser._id,
+      name: existingUser.name,
+      userCode: existingUser.userCode,
+      userType: existingUser.userType,
+      tags: existingUser.tags,
+    }
+  });
+}
+
+
       const newUser = new User({
         name,
         birthdate,
