@@ -3,18 +3,71 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { check, validationResult } from "express-validator";
 import dotenv from "dotenv";
+import nodemailer from "nodemailer";
 import User from "../models/User.js";
 import UserProfile from "../models/userProfile.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import organizationUpload from "../middleware/organizationUploadWithTextFields.js";
-import { verifiedPhones } from "./smsRoutes.js"; // 或 "../routes/smsRoutes.js" 視乎檔案位置
-
+import { verifiedPhones } from "./smsRoutes.js";
 
 dotenv.config();
 
 const router = express.Router();
-
 console.log("✅ userRoutes.js 已載入");
+
+// ✅ POST /api/users/request-password-reset
+router.post("/request-password-reset", async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ msg: "請提供電話號碼" });
+
+  const user = await User.findOne({ phone });
+  if (!user || !user.email) return res.status(404).json({ msg: "找不到綁定電郵的帳戶" });
+
+  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "15m" });
+
+  const resetLink = `https://hihitutor.com/reset-password?token=${token}`;
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.SMTP_EMAIL,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `HiHiTutor <${process.env.SMTP_EMAIL}>`,
+    to: user.email,
+    subject: "【HiHiTutor】重設密碼連結（15分鐘內有效）",
+    html: `
+      <p>親愛的用戶您好，</p>
+      <p>請點擊以下連結以重設您的 HiHiTutor 密碼（有效期為 15 分鐘）：</p>
+      <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
+      <p>如您沒有申請重設密碼，請忽略此電郵。</p>
+    `,
+  });
+
+  res.json({ msg: "✅ 已發送重設密碼連結至您的電郵" });
+});
+
+// ✅ POST /api/users/reset-password
+router.post("/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ msg: "缺少參數" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ msg: "找不到用戶" });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ msg: "✅ 密碼已成功更新" });
+  } catch (err) {
+    console.error("❌ 密碼重設錯誤:", err.message);
+    res.status(400).json({ msg: "連結無效或已過期" });
+  }
+});
 
 router.post(
   "/register",
