@@ -18,22 +18,22 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/hihitutor";
 
-// ✅ 設定 CORS
-app.use(cors({
-origin: [
-  "https://www.hihitutor.com",                        // ✅ 新增：正式網站
-  "https://hihitutor-frontend.onrender.com",
-  "http://localhost:3000",
-  "https://hihitutor-admin.vercel.app",
-  "https://hihitutor-admin-falsekit4-hihitutors-projects.vercel.app"
-],
-
+const corsOptions = {
+  origin: [
+    "https://www.hihitutor.com",
+    "https://hihitutor-frontend.onrender.com",
+    "http://localhost:3000",
+    "https://hihitutor-admin.vercel.app",
+    "https://hihitutor-admin-falsekit4-hihitutors-projects.vercel.app"
+  ],
   methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS",
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "Range"],
   exposedHeaders: ["Content-Range", "X-Total-Count"]
-}));
-app.options("*", cors());
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ 確保 OPTIONS request 用相同設定
 
 // ✅ 解析 Body
 app.use(express.json());

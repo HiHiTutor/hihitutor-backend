@@ -111,8 +111,15 @@ if (existingUserByPhone && existingUserByPhone.status === "inactive") {
   });
 }
 
+// ✅ 先定義 userCode
+const count = await User.countDocuments({
+  userType,
+  tags: userType === "organization" ? ["institution"] : ["student"]
+});
+const prefix = userType === "organization" ? "ORG" : "U";
+const userCode = `${prefix}-${String(count + 1).padStart(5, "0")}`;
 
-
+// ✅ 再建立新用戶
       const newUser = new User({
         name,
         birthdate,
