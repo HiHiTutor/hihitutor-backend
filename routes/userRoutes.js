@@ -43,82 +43,74 @@ router.post(
 
       verifiedPhones.delete(phone);
 
-      const existingUser = await User.findOne({ email });
+// ✅ 1. 用 email 查詢帳戶
+const existingUserByEmail = await User.findOne({ email });
 
-if (existingUser) {
-  if (existingUser.status === "inactive") {
+if (existingUserByEmail) {
+  if (existingUserByEmail.status === "inactive") {
     // ✅ 重新啟用帳戶
-    existingUser.name = name;
-    existingUser.birthdate = birthdate;
-    existingUser.phone = phone;
-    existingUser.userType = userType;
-    existingUser.tags = userType === "organization" ? ["institution"] : ["student"];
-    existingUser.status = "active";
+    existingUserByEmail.name = name;
+    existingUserByEmail.birthdate = birthdate;
+    existingUserByEmail.phone = phone;
+    existingUserByEmail.userType = userType;
+    existingUserByEmail.tags = userType === "organization" ? ["institution"] : ["student"];
+    existingUserByEmail.status = "active";
 
-    await existingUser.save();
+    await existingUserByEmail.save();
 
-    const payload = { user: { id: existingUser.id, role: userType } };
+    const payload = { user: { id: existingUserByEmail.id, role: userType } };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
 
     return res.json({
       msg: "✅ 帳戶已重新啟用",
       token,
       user: {
-        id: existingUser._id,
-        name: existingUser.name,
-        userCode: existingUser.userCode,
-        userType: existingUser.userType,
-        tags: existingUser.tags,
+        id: existingUserByEmail._id,
+        name: existingUserByEmail.name,
+        userCode: existingUserByEmail.userCode,
+        userType: existingUserByEmail.userType,
+        tags: existingUserByEmail.tags,
       },
     });
   } else {
-    // ❌ 有其他 active 帳戶，禁止註冊
     return res.status(400).json({ msg: "該電郵已被註冊" });
   }
 }
 
+// ✅ 2. 用電話查詢帳戶
+const existingUserByPhone = await User.findOne({ phone });
 
-      const count = await User.countDocuments({
-        userType,
-        tags: userType === "organization" ? ["institution"] : ["student"]
-      });
-
-      const codePrefix = userType === "organization" ? "ORG" : "U";
-      const userCode = `${codePrefix}-${String(count + 1).padStart(5, "0")}`;
-
-// 註冊時加入以下邏輯，放在檢查 verifiedPhones 後：
-existingUser = await User.findOne({ phone });
-
-if (existingUser && existingUser.status === "active") {
+if (existingUserByPhone && existingUserByPhone.status === "active") {
   return res.status(400).json({ msg: "此電話號碼已被使用，請勿重複註冊。" });
 }
 
-if (existingUser && existingUser.status === "inactive") {
+if (existingUserByPhone && existingUserByPhone.status === "inactive") {
   // 自動復效帳戶
-  existingUser.status = "active";
-  existingUser.name = name;
-  existingUser.birthdate = birthdate;
-  existingUser.email = email;
-  existingUser.password = await bcrypt.hash(password, 10);
-  existingUser.userType = userType;
-  existingUser.tags = userType === "organization" ? ["institution"] : ["student"];
+  existingUserByPhone.status = "active";
+  existingUserByPhone.name = name;
+  existingUserByPhone.birthdate = birthdate;
+  existingUserByPhone.email = email;
+  existingUserByPhone.password = await bcrypt.hash(password, 10);
+  existingUserByPhone.userType = userType;
+  existingUserByPhone.tags = userType === "organization" ? ["institution"] : ["student"];
 
-  await existingUser.save();
+  await existingUserByPhone.save();
 
-  const token = jwt.sign({ user: { id: existingUser.id, role: "student" } }, process.env.JWT_SECRET, { expiresIn: "1h" });
+  const token = jwt.sign({ user: { id: existingUserByPhone.id, role: "student" } }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
   return res.json({
     msg: "✅ 帳戶已復效並成功登入",
     token,
     user: {
-      id: existingUser._id,
-      name: existingUser.name,
-      userCode: existingUser.userCode,
-      userType: existingUser.userType,
-      tags: existingUser.tags,
+      id: existingUserByPhone._id,
+      name: existingUserByPhone.name,
+      userCode: existingUserByPhone.userCode,
+      userType: existingUserByPhone.userType,
+      tags: existingUserByPhone.tags,
     }
   });
 }
+
 
 
       const newUser = new User({
