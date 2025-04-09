@@ -272,14 +272,19 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 
     // 如果係用戶自己刪自己，就 set 為 inactive
     if (requester.id === userId) {
-      const user = await User.findById(userId);
-      if (!user) return res.status(404).json({ msg: "找不到用戶" });
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ msg: "找不到用戶" });
 
-      user.status = "inactive";
-      await user.save();
+  user.status = "inactive";
 
-      return res.json({ msg: "✅ 帳戶已隱藏（已登出，無法再登入）" });
-    }
+  // ✅ 強制設定欄位，避免 Mongoose validation error
+  user.userCode = user.userCode || `U-${user._id.toString().slice(-5)}`;
+
+  await user.save();
+
+  return res.json({ msg: "✅ 帳戶已隱藏（已登出，無法再登入）" });
+}
+
 
     return res.status(403).json({ msg: "你沒有權限刪除此帳戶" });
   } catch (err) {
