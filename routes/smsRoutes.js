@@ -1,7 +1,7 @@
 import express from "express";
 
 const router = express.Router();
-const verifiedPhones = new Set();
+const verifiedPhones = new Map();
 const verificationCodes = new Map(); // 用 Map 暫存驗證碼（正式應用應該用 Redis）
 
 // 🔹 POST /api/sms/send-code
@@ -28,12 +28,14 @@ router.post("/verify-code", (req, res) => {
   const validCode = verificationCodes.get(phone);
   if (!validCode) return res.status(400).json({ message: "驗證碼已過期或未發送" });
 
-  if (validCode !== code) return res.status(400).json({ message: "驗證碼錯誤" });
+if (validCode !== code) return res.status(400).json({ message: "驗證碼錯誤" });
 
-  verificationCodes.delete(phone);
-  verifiedPhones.add(phone);
-  return res.status(200).json({ message: "驗證成功" });
-});
+verificationCodes.delete(phone);
+
+// ✅ 記錄驗證成功時間
+verifiedPhones.set(phone, Date.now());
+
+return res.status(200).json({ message: "驗證成功" });
 
 // ✅ 正確的 ESM 匯出方式
 export default router;

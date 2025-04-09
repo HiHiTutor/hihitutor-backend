@@ -36,12 +36,16 @@ router.post(
     const { name, birthdate, email, password, phone, userType, verificationCode } = req.body;
 
     try {
-      console.log("📞 已驗證電話列表:", [...verifiedPhones]);
-      if (!verifiedPhones.has(phone)) {
-        return res.status(400).json({ msg: "請先完成電話驗證" });
-      }
+      // ✅ 支援 10 分鐘有效電話驗證
+const verifiedAt = verifiedPhones.get(phone);
 
-      verifiedPhones.delete(phone);
+if (!verifiedAt || Date.now() - verifiedAt > 10 * 60 * 1000) {
+  return res.status(400).json({ msg: "請先完成電話驗證" });
+}
+
+// ⚠️ 驗證過後就刪除，避免重複用
+verifiedPhones.delete(phone);
+
 
 // ✅ 1. 用 email 查詢帳戶
 const existingUserByEmail = await User.findOne({ email });
