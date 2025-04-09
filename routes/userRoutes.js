@@ -87,7 +87,7 @@ if (existingUser) {
       const userCode = `${codePrefix}-${String(count + 1).padStart(5, "0")}`;
 
 // 註冊時加入以下邏輯，放在檢查 verifiedPhones 後：
-const existingUser = await User.findOne({ phone });
+existingUser = await User.findOne({ phone });
 
 if (existingUser && existingUser.status === "active") {
   return res.status(400).json({ msg: "此電話號碼已被使用，請勿重複註冊。" });
