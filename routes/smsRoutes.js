@@ -28,15 +28,16 @@ router.post("/verify-code", (req, res) => {
   const validCode = verificationCodes.get(phone);
   if (!validCode) return res.status(400).json({ message: "驗證碼已過期或未發送" });
 
-if (validCode !== code) return res.status(400).json({ message: "驗證碼錯誤" });
+  if (validCode !== code) return res.status(400).json({ message: "驗證碼錯誤" });
 
-verificationCodes.delete(phone);
+  verificationCodes.delete(phone);
 
-// ✅ 記錄驗證成功時間
-verifiedPhones.set(phone, Date.now());
+  // ✅ 記錄驗證成功時間
+  verifiedPhones.set(phone, Date.now());
 
-return res.status(200).json({ message: "驗證成功" });
+  return res.status(200).json({ message: "驗證成功" });
+});
 
-// ✅ 正確的 ESM 匯出方式
+// ✅ 正確 ESM 匯出方式（寫喺最底、function 外面）
 export default router;
 export { verificationCodes, verifiedPhones };
