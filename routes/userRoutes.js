@@ -204,5 +204,18 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
+// ✅ 加返這條 API：取得單一用戶
+router.get("/:id", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ msg: "找不到用戶" });
+    res.status(200).json(user);
+  } catch (err) {
+    console.error("❌ 讀取用戶錯誤:", err.message);
+    res.status(500).json({ msg: "伺服器錯誤" });
+  }
+});
+
+
 
 export default router;
