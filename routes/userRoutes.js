@@ -225,6 +225,43 @@ router.post(
   }
 );
 
+// ✅ POST /api/users/check-phone
+router.post("/check-phone", async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ msg: "請提供電話號碼" });
+
+    const existing = await User.findOne({ phone, status: "active" });
+    if (existing) {
+      return res.status(200).json({ exists: true, msg: "電話號碼已被使用" });
+    }
+
+    res.status(200).json({ exists: false });
+  } catch (err) {
+    console.error("❌ 檢查電話錯誤:", err.message);
+    res.status(500).json({ msg: "伺服器錯誤" });
+  }
+});
+
+// ✅ POST /api/users/check-email
+router.post("/check-email", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ msg: "請提供電郵" });
+
+    const existing = await User.findOne({ email, status: "active" });
+    if (existing) {
+      return res.status(200).json({ exists: true, msg: "電郵已被使用" });
+    }
+
+    res.status(200).json({ exists: false });
+  } catch (err) {
+    console.error("❌ 檢查電郵錯誤:", err.message);
+    res.status(500).json({ msg: "伺服器錯誤" });
+  }
+});
+
+
 // ✅ 刷新 Token
 router.post("/refresh-token", authMiddleware, async (req, res) => {
   try {
