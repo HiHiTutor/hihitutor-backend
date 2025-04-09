@@ -43,8 +43,40 @@ router.post(
 
       verifiedPhones.delete(phone);
 
-      const existing = await User.findOne({ email });
-      if (existing) return res.status(400).json({ msg: "該電郵已被註冊" });
+      const existingUser = await User.findOne({ email });
+
+if (existingUser) {
+  if (existingUser.status === "inactive") {
+    // ✅ 重新啟用帳戶
+    existingUser.name = name;
+    existingUser.birthdate = birthdate;
+    existingUser.phone = phone;
+    existingUser.userType = userType;
+    existingUser.tags = userType === "organization" ? ["institution"] : ["student"];
+    existingUser.status = "active";
+
+    await existingUser.save();
+
+    const payload = { user: { id: existingUser.id, role: userType } };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    return res.json({
+      msg: "✅ 帳戶已重新啟用",
+      token,
+      user: {
+        id: existingUser._id,
+        name: existingUser.name,
+        userCode: existingUser.userCode,
+        userType: existingUser.userType,
+        tags: existingUser.tags,
+      },
+    });
+  } else {
+    // ❌ 有其他 active 帳戶，禁止註冊
+    return res.status(400).json({ msg: "該電郵已被註冊" });
+  }
+}
+
 
       const count = await User.countDocuments({
         userType,
