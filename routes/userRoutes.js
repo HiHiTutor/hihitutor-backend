@@ -158,6 +158,29 @@ router.post(
   }
 );
 
+// ✅ 刷新 Token
+router.post("/refresh-token", authMiddleware, async (req, res) => {
+  try {
+    const user = req.user;
+
+    let role = "user";
+    if (user.tags?.includes("admin")) role = "admin";
+    else if (user.tags?.includes("institution")) role = "organization";
+    else if (user.tags?.includes("tutor")) role = "tutor";
+    else if (user.tags?.includes("student")) role = "student";
+
+    const newToken = jwt.sign({ user: { id: user._id, role } }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.json({ token: newToken });
+  } catch (err) {
+    console.error("❌ 刷新 Token 失敗:", err.message);
+    res.status(500).json({ msg: "伺服器錯誤" });
+  }
+});
+
+
 router.post("/upgrade-to-tutor", authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -235,6 +258,36 @@ router.put("/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// ✅ 刪除用戶（Admin 真正刪除；用戶本人只改為 inactive）
+router.delete("/:id", authMiddleware, async (req, res) => {
+  const userId = req.params.id;
+  const currentUser = req.user;
+
+  try {
+    // Admin 可直接刪除
+    if (currentUser.tags?.includes("admin")) {
+      const deleted = await User.findByIdAndDelete(userId);
+      if (!deleted) return res.status(404).json({ msg: "找不到用戶" });
+      return res.json({ msg: "✅ 用戶已被永久刪除" });
+    }
+
+    // 非 Admin，只能刪除自己
+    if (currentUser._id.toString() !== userId) {
+      return res.status(403).json({ msg: "只有本人可以停用自己的帳戶" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ msg: "找不到用戶" });
+
+    user.status = "inactive";
+    await user.save();
+
+    res.json({ msg: "✅ 帳戶已停用（刪除）", status: user.status });
+  } catch (err) {
+    console.error("❌ 刪除用戶錯誤:", err.message);
+    res.status(500).json({ msg: "伺服器錯誤" });
+  }
+});
 
 
 export default router;

@@ -42,6 +42,13 @@ const UserSchema = new mongoose.Schema({
 
   institutionName: { type: String },
   businessRegistrationNumber: { type: String },
+
+  // ✅ 新增 status 欄位
+  status: {
+    type: String,
+    enum: ["active", "inactive"],
+    default: "active"
+  }
 });
 
 // ✅ 自動計算年齡
