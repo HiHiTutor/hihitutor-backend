@@ -545,6 +545,6 @@ router.post("/approve-organization/:id", authMiddleware, async (req, res) => {
     console.error("❌ 機構審批錯誤:", err.message);
     res.status(500).json({ msg: "伺服器錯誤，審批失敗" });
   }
-});
+}); // 👈 <<<<<< 加番呢個右括號！
 
 export default router;
