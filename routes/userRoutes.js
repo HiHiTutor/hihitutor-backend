@@ -242,18 +242,6 @@ else if (newUser.tags.includes("student")) role = "student";
 
 const token = jwt.sign({ user: { id: newUser.id, role } }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-res.json({
-  msg: "✅ 註冊成功",
-  token,
-  user: {
-    id: newUser._id,
-    name: newUser.name,
-    userCode: newUser.userCode,
-    userType: newUser.userType,
-    tags: newUser.tags
-  }
-});
-
 router.post(
   "/login",
   [
@@ -263,28 +251,44 @@ router.post(
   async (req, res) => {
     console.log("📌 收到 /login 請求:", req.body);
     const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
 
     const { identifier, password } = req.body;
 
     try {
-      const user = await User.findOne({ $or: [{ email: identifier }, { phone: identifier }] }).select("+password");
-      if (!user) return res.status(400).json({ msg: "無效的帳號或密碼 (用戶不存在)" });
+      const user = await User.findOne({
+        $or: [{ email: identifier }, { phone: identifier }],
+      }).select("+password");
+
+      if (!user)
+        return res.status(400).json({ msg: "無效的帳號或密碼 (用戶不存在)" });
 
       const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) return res.status(400).json({ msg: "無效的帳號或密碼" });
+      if (!isMatch)
+        return res.status(400).json({ msg: "無效的帳號或密碼" });
 
-// ✅ 機構用戶如未審批（例如冇 organizationDocs 或未通過審核），禁止登入
-if (user.userType === "organization" && user.tags.includes("institution")) {
-  if (!user.organizationDocs?.br || !user.organizationDocs?.cr || !user.organizationDocs?.addressProof) {
-    return res.status(403).json({ msg: "您的機構資料尚未提交完整，請補交文件後再試。" });
-  }
+      // ✅ 機構用戶如未審批，禁止登入
+      if (
+        user.userType === "organization" &&
+        user.tags.includes("institution")
+      ) {
+        if (
+          !user.organizationDocs?.br ||
+          !user.organizationDocs?.cr ||
+          !user.organizationDocs?.addressProof
+        ) {
+          return res.status(403).json({
+            msg: "您的機構資料尚未提交完整，請補交文件後再試。",
+          });
+        }
 
-  if (user.status !== "approved") {
-    return res.status(403).json({ msg: "您的機構帳戶尚未審批，請等待平台審核。" });
-  }
-}
-
+        if (user.status !== "approved") {
+          return res.status(403).json({
+            msg: "您的機構帳戶尚未審批，請等待平台審核。",
+          });
+        }
+      }
 
       let role = "user";
       if (user.tags.includes("admin")) role = "admin";
@@ -293,7 +297,9 @@ if (user.userType === "organization" && user.tags.includes("institution")) {
       else if (user.tags.includes("student")) role = "student";
 
       const payload = { user: { id: user.id, role } };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
+      const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
 
       res.json({ token });
     } catch (err) {
@@ -302,6 +308,7 @@ if (user.userType === "organization" && user.tags.includes("institution")) {
     }
   }
 );
+
 
 // ✅ POST /api/users/check-phone
 router.post("/check-phone", async (req, res) => {
@@ -545,6 +552,6 @@ router.post("/approve-organization/:id", authMiddleware, async (req, res) => {
     console.error("❌ 機構審批錯誤:", err.message);
     res.status(500).json({ msg: "伺服器錯誤，審批失敗" });
   }
-}); // 👈 <<<<<< 加番呢個右括號！
+});
 
 export default router;
