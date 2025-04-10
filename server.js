@@ -6,6 +6,8 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+console.log("✅ NODE VERSION:", process.version);
+console.log("✅ Module Type:", import.meta.url);
 
 // ✅ 處理 ESM 無 __dirname 問題
 const __filename = fileURLToPath(import.meta.url);
