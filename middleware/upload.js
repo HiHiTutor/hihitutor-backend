@@ -74,9 +74,11 @@ const uploadOrgDocs = multer({
   fileFilter,
   limits,
 }).fields([
-  { name: "businessRegistration", maxCount: 1 },
+  { name: "br", maxCount: 1 },
+  { name: "cr", maxCount: 1 },
   { name: "addressProof", maxCount: 1 },
-]);
+])
+;
 
 // ✅ 匯出（ESM named export）
 export {
