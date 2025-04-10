@@ -215,35 +215,44 @@ const userCode = `${prefix}-${String(count + 1).padStart(5, "0")}`;
         };
       }
 
-      newUser.password = await bcrypt.hash(password, 10);
-      await newUser.save();
+newUser.password = await bcrypt.hash(password, 10);
+await newUser.save();
 
-      let role = "user";
-      if (newUser.tags.includes("admin")) role = "admin";
-      else if (newUser.tags.includes("institution")) role = "organization";
-      else if (newUser.tags.includes("tutor")) role = "tutor";
-      else if (newUser.tags.includes("student")) role = "student";
-
-      const token = jwt.sign({ user: { id: newUser.id, role } }, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-      res.json({
-        msg: "✅ 註冊成功",
-        token,
-        user: {
-          id: newUser._id,
-          name: newUser.name,
-          userCode: newUser.userCode,
-          userType: newUser.userType,
-          tags: newUser.tags,
-          organizationDocs: newUser.organizationDocs || {}
-        }
-      });
-    } catch (err) {
-      console.error("❌ 註冊錯誤:", err.message);
-      res.status(500).json({ error: "伺服器錯誤" });
+if (newUser.userType === "organization") {
+  // 🔒 機構用戶不即時登入，提示等待審批
+  return res.json({
+    msg: "✅ 機構註冊成功，請等待後台審批通過後再登入。",
+    user: {
+      id: newUser._id,
+      name: newUser.name,
+      userCode: newUser.userCode,
+      userType: newUser.userType,
+      tags: newUser.tags,
+      organizationDocs: newUser.organizationDocs || {}
     }
+  });
+}
+
+// ✅ 其他用戶正常登入（例如個人用戶）
+let role = "user";
+if (newUser.tags.includes("admin")) role = "admin";
+else if (newUser.tags.includes("institution")) role = "organization";
+else if (newUser.tags.includes("tutor")) role = "tutor";
+else if (newUser.tags.includes("student")) role = "student";
+
+const token = jwt.sign({ user: { id: newUser.id, role } }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+res.json({
+  msg: "✅ 註冊成功",
+  token,
+  user: {
+    id: newUser._id,
+    name: newUser.name,
+    userCode: newUser.userCode,
+    userType: newUser.userType,
+    tags: newUser.tags
   }
-);
+});
 
 router.post(
   "/login",
@@ -264,6 +273,18 @@ router.post(
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.status(400).json({ msg: "無效的帳號或密碼" });
+
+// ✅ 機構用戶如未審批（例如冇 organizationDocs 或未通過審核），禁止登入
+if (user.userType === "organization" && user.tags.includes("institution")) {
+  if (!user.organizationDocs?.br || !user.organizationDocs?.cr || !user.organizationDocs?.addressProof) {
+    return res.status(403).json({ msg: "您的機構資料尚未提交完整，請補交文件後再試。" });
+  }
+
+  if (user.status !== "approved") {
+    return res.status(403).json({ msg: "您的機構帳戶尚未審批，請等待平台審核。" });
+  }
+}
+
 
       let role = "user";
       if (user.tags.includes("admin")) role = "admin";
@@ -495,5 +516,39 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+// ✅ POST /api/users/reset-password：使用 token 重設密碼
+router.post("/reset-password", async (req, res) => {
+  // ...（略）
+});
+
+// ✅ Admin 審批機構帳戶
+router.post("/approve-organization/:id", authMiddleware, async (req, res) => {
+  try {
+    const adminUser = req.user;
+    if (!adminUser.tags.includes("admin")) {
+      return res.status(403).json({ msg: "你沒有權限進行此操作" });
+    }
+
+    const targetUserId = req.params.id;
+    const user = await User.findById(targetUserId);
+    if (!user) return res.status(404).json({ msg: "找不到用戶" });
+
+    if (user.userType !== "organization") {
+      return res.status(400).json({ msg: "此用戶不是機構帳戶" });
+    }
+
+    user.status = "approved";
+    await user.save();
+
+    res.json({ msg: "✅ 機構帳戶已成功審批" });
+  } catch (err) {
+    console.error("❌ 機構審批錯誤:", err.message);
+    res.status(500).json({ msg: "伺服器錯誤，審批失敗" });
+  }
+});
 
 export default router;
+
+
+export default router;
+  # �[�@��Ŧ�]�Χ�ӵ��ѳ��o�^
