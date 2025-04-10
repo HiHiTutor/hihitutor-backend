@@ -4,6 +4,7 @@ import UserProfile from "../models/userProfile.js";
 import User from "../models/User.js";
 import Case from "../models/case.js";
 import { uploadCertificates, uploadOrgDocs } from "../middleware/upload.js";
+import bcrypt from "bcryptjs";
 
 const router = express.Router();
 
