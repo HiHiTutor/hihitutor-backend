@@ -454,5 +454,46 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// ✅ POST /api/users/reset-password：使用 token 重設密碼
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ msg: "請提供 token 和新密碼" });
+    }
+
+    // 驗證 token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(400).json({ msg: "Token 已失效或無效" });
+    }
+
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ msg: "找不到用戶" });
+
+    // 檢查密碼格式
+    const isValid =
+      typeof newPassword === "string" &&
+      newPassword.length >= 8 &&
+      /[A-Za-z]/.test(newPassword) &&
+      /\d/.test(newPassword);
+
+    if (!isValid) {
+      return res.status(400).json({ msg: "密碼格式錯誤，請至少 8 字、包含英文字母及數字" });
+    }
+
+    // 更新密碼
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ msg: "✅ 密碼已成功重設，請用新密碼登入" });
+  } catch (err) {
+    console.error("❌ 重設密碼錯誤:", err.message);
+    res.status(500).json({ msg: "伺服器錯誤，請稍後再試。" });
+  }
+});
+
 
 export default router;
