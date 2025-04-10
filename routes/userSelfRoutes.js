@@ -104,24 +104,25 @@ router.get("/my-cases", authMiddleware, async (req, res) => {
   }
 });
 
-// ✅ 更改密碼 API：PUT /api/self-users/me/password
+// ✅ 更改登入密碼
 router.put("/me/password", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { password } = req.body;
 
-    // 格式驗證（可按需要加強）
     if (!password || password.length < 8) {
-      return res.status(400).json({ msg: "密碼至少需 8 字元" });
+      return res.status(400).json({ msg: "密碼格式錯誤" });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ msg: "找不到用戶" });
 
-    user.password = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
     await user.save();
 
-    res.json({ msg: "✅ 密碼已成功更新" });
+    res.json({ msg: "✅ 密碼已更新" });
   } catch (err) {
     console.error("❌ 更改密碼錯誤:", err.message);
     res.status(500).json({ msg: "伺服器錯誤" });
