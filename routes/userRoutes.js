@@ -69,12 +69,6 @@ router.post("/request-password-reset", async (req, res) => {
   }
 });
 
-    res.json({ msg: "✅ 重設密碼連結已發送到您的電郵" });
-  } catch (err) {
-    console.error("❌ 發送重設密碼 email 錯誤:", err.message);
-    res.status(500).json({ error: "發送失敗，請稍後再試。" });
-  }
-});
 
 router.post(
   "/register",
