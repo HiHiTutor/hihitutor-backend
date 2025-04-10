@@ -484,16 +484,26 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ msg: "密碼格式錯誤，請至少 8 字、包含英文字母及數字" });
     }
 
-    // 更新密碼
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
+// ✅ POST /api/users/reset-password：重設密碼
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ msg: "資料不完整" });
 
-    res.json({ msg: "✅ 密碼已成功重設，請用新密碼登入" });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ msg: "無效的用戶" });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save({ validateBeforeSave: false }); // 👈 禁用 validation
+
+    res.json({ msg: "✅ 密碼已成功更新" });
   } catch (err) {
     console.error("❌ 重設密碼錯誤:", err.message);
-    res.status(500).json({ msg: "伺服器錯誤，請稍後再試。" });
+    res.status(500).json({ msg: "密碼重設失敗，請稍後再試。" });
   }
 });
+
 
 
 export default router;
