@@ -504,5 +504,5 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-const userRouter = router;
-export { userRouter as default };
+// 👇 正確匯出方式
+export default router;
