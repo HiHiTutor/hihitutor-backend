@@ -468,7 +468,7 @@ router.post("/reset-password", async (req, res) => {
 });
 
 // ✅ POST /api/users/approve-organization/:id
-router.post("/approve-organization/:id", authMiddleware, async (req, res) => {
+router.put("/approve-organization/:id", authMiddleware, async (req, res) => {
   try {
     if (!req.user.tags.includes("admin")) {
       return res.status(403).json({ message: "權限不足" });
