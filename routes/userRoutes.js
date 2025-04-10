@@ -548,7 +548,3 @@ router.post("/approve-organization/:id", authMiddleware, async (req, res) => {
 });
 
 export default router;
-
-
-export default router;
-  # 加一行空行（或改個註解都得）
