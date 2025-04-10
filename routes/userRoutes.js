@@ -15,19 +15,26 @@ dotenv.config();
 const router = express.Router();
 console.log("✅ userRoutes.js 已載入");
 
-// ✅ POST /api/users/request-password-reset：根據電話寄出 email reset link
+// 工具函數：決定用戶角色
+const determineUserRole = (tags) => {
+  if (tags?.includes("admin")) return "admin";
+  if (tags?.includes("institution")) return "organization";
+  if (tags?.includes("tutor")) return "tutor";
+  if (tags?.includes("student")) return "student";
+  return "user";
+};
+
+// ✅ POST /api/users/request-password-reset
 router.post("/request-password-reset", async (req, res) => {
   try {
     const { phone } = req.body;
-    if (!phone) return res.status(400).json({ error: "請提供電話號碼" });
+    if (!phone) return res.status(400).json({ message: "請提供電話號碼" });
 
-    // 查找用戶
     const user = await User.findOne({ phone });
     if (!user || !user.email) {
-      return res.status(404).json({ error: "找不到綁定電郵的帳戶" });
+      return res.status(404).json({ message: "找不到綁定電郵的帳戶" });
     }
 
-    // 建立 reset token（30 分鐘有效）
     const resetToken = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,
@@ -36,7 +43,6 @@ router.post("/request-password-reset", async (req, res) => {
 
     const resetLink = `https://www.hihitutor.com/reset-password?token=${resetToken}`;
 
-    // 初始化 transporter
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
@@ -47,7 +53,6 @@ router.post("/request-password-reset", async (req, res) => {
       }
     });
 
-    // 發送 email
     await transporter.sendMail({
       from: process.env.EMAIL_FROM || `"HiHiTutor" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -62,14 +67,14 @@ router.post("/request-password-reset", async (req, res) => {
       `
     });
 
-    res.json({ msg: "✅ 重設密碼連結已發送到您的電郵" });
+    res.json({ message: "✅ 重設密碼連結已發送到您的電郵" });
   } catch (err) {
     console.error("❌ 發送重設密碼 email 錯誤:", err.message);
-    res.status(500).json({ error: "發送失敗，請稍後再試。" });
+    res.status(500).json({ message: "發送失敗，請稍後再試。" });
   }
 });
 
-
+// ✅ POST /api/users/register
 router.post(
   "/register",
   organizationUpload,
@@ -83,101 +88,68 @@ router.post(
     check("userType", "請選擇用戶類型").not().isEmpty()
   ],
   async (req, res) => {
-    console.log("📌 收到 /register 請求:", req.body);
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-    const { name, birthdate, email, password, phone, userType, verificationCode } = req.body;
+    const { name, birthdate, email, password, phone, userType } = req.body;
 
     try {
-      // ✅ 支援 10 分鐘有效電話驗證
-const verifiedAt = verifiedPhones.get(phone);
+      // 電話驗證檢查
+      const verifiedAt = verifiedPhones.get(phone);
+      if (!verifiedAt || Date.now() - verifiedAt > 10 * 60 * 1000) {
+        return res.status(400).json({ message: "請先完成電話驗證" });
+      }
+      verifiedPhones.delete(phone);
 
-if (!verifiedAt || Date.now() - verifiedAt > 10 * 60 * 1000) {
-  return res.status(400).json({ msg: "請先完成電話驗證" });
-}
+      // 檢查現有用戶
+      const existingUserByEmail = await User.findOne({ email });
+      if (existingUserByEmail) {
+        if (existingUserByEmail.status === "inactive") {
+          // 重新啟用帳戶
+          existingUserByEmail.name = name;
+          existingUserByEmail.birthdate = birthdate;
+          existingUserByEmail.phone = phone;
+          existingUserByEmail.userType = userType;
+          existingUserByEmail.tags = userType === "organization" ? ["institution"] : ["student"];
+          existingUserByEmail.status = "active";
+          await existingUserByEmail.save();
 
-// ⚠️ 驗證過後就刪除，避免重複用
-verifiedPhones.delete(phone);
+          const token = jwt.sign(
+            { user: { id: existingUserByEmail.id, role: determineUserRole(existingUserByEmail.tags) } },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+          );
 
+          return res.json({
+            message: "✅ 帳戶已重新啟用",
+            token,
+            user: {
+              id: existingUserByEmail._id,
+              name: existingUserByEmail.name,
+              userCode: existingUserByEmail.userCode,
+              userType: existingUserByEmail.userType,
+              tags: existingUserByEmail.tags,
+            },
+          });
+        }
+        return res.status(400).json({ message: "該電郵已被註冊" });
+      }
 
-// ✅ 1. 用 email 查詢帳戶
-const existingUserByEmail = await User.findOne({ email });
+      // 檢查電話是否已被使用
+      const existingUserByPhone = await User.findOne({ phone, status: "active" });
+      if (existingUserByPhone) {
+        return res.status(400).json({ message: "此電話號碼已被使用" });
+      }
 
-if (existingUserByEmail) {
-  if (existingUserByEmail.status === "inactive") {
-    // ✅ 重新啟用帳戶
-    existingUserByEmail.name = name;
-    existingUserByEmail.birthdate = birthdate;
-    existingUserByEmail.phone = phone;
-    existingUserByEmail.userType = userType;
-    existingUserByEmail.tags = userType === "organization" ? ["institution"] : ["student"];
-    existingUserByEmail.status = "active";
+      // 生成用戶編號
+      const count = await User.countDocuments({
+        userType,
+        tags: userType === "organization" ? ["institution"] : ["student"]
+      });
+      const prefix = userType === "organization" ? "ORG" : "U";
+      const userCode = `${prefix}-${String(count + 1).padStart(5, "0")}`;
 
-    await existingUserByEmail.save();
-
-    const payload = { user: { id: existingUserByEmail.id, role: userType } };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-    return res.json({
-      msg: "✅ 帳戶已重新啟用",
-      token,
-      user: {
-        id: existingUserByEmail._id,
-        name: existingUserByEmail.name,
-        userCode: existingUserByEmail.userCode,
-        userType: existingUserByEmail.userType,
-        tags: existingUserByEmail.tags,
-      },
-    });
-  } else {
-    return res.status(400).json({ msg: "該電郵已被註冊" });
-  }
-}
-
-// ✅ 2. 用電話查詢帳戶
-const existingUserByPhone = await User.findOne({ phone });
-
-if (existingUserByPhone && existingUserByPhone.status === "active") {
-  return res.status(400).json({ msg: "此電話號碼已被使用，請勿重複註冊。" });
-}
-
-if (existingUserByPhone && existingUserByPhone.status === "inactive") {
-  // 自動復效帳戶
-  existingUserByPhone.status = "active";
-  existingUserByPhone.name = name;
-  existingUserByPhone.birthdate = birthdate;
-  existingUserByPhone.email = email;
-  existingUserByPhone.password = await bcrypt.hash(password, 10);
-  existingUserByPhone.userType = userType;
-  existingUserByPhone.tags = userType === "organization" ? ["institution"] : ["student"];
-
-  await existingUserByPhone.save();
-
-  const token = jwt.sign({ user: { id: existingUserByPhone.id, role: "student" } }, process.env.JWT_SECRET, { expiresIn: "1h" });
-
-  return res.json({
-    msg: "✅ 帳戶已復效並成功登入",
-    token,
-    user: {
-      id: existingUserByPhone._id,
-      name: existingUserByPhone.name,
-      userCode: existingUserByPhone.userCode,
-      userType: existingUserByPhone.userType,
-      tags: existingUserByPhone.tags,
-    }
-  });
-}
-
-// ✅ 先定義 userCode
-const count = await User.countDocuments({
-  userType,
-  tags: userType === "organization" ? ["institution"] : ["student"]
-});
-const prefix = userType === "organization" ? "ORG" : "U";
-const userCode = `${prefix}-${String(count + 1).padStart(5, "0")}`;
-
-// ✅ 再建立新用戶
+      // 創建新用戶
       const newUser = new User({
         name,
         birthdate,
@@ -185,27 +157,26 @@ const userCode = `${prefix}-${String(count + 1).padStart(5, "0")}`;
         phone,
         userType,
         tags: userType === "organization" ? ["institution"] : ["student"],
-        userCode
+        userCode,
+        password: await bcrypt.hash(password, 10)
       });
 
+      // 處理機構用戶文件上傳
       if (userType === "organization") {
         const { br, cr, addressProof } = req.files || {};
         if (!br?.[0] || !cr?.[0] || !addressProof?.[0]) {
-          return res.status(400).json({ msg: "機構註冊需上載 BR、CR 及地址證明" });
+          return res.status(400).json({ message: "機構註冊需上載 BR、CR 及地址證明" });
         }
 
         const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
         const allFiles = [br[0], cr[0], addressProof[0]];
 
-        const invalidFiles = allFiles.filter(file => !allowedTypes.includes(file.mimetype));
-        const oversized = allFiles.filter(file => file.size > 5 * 1024 * 1024);
-
-        if (invalidFiles.length > 0) {
-          return res.status(400).json({ msg: "請只上傳 PDF 或 JPG/PNG 圖片" });
+        if (allFiles.some(file => !allowedTypes.includes(file.mimetype))) {
+          return res.status(400).json({ message: "請只上傳 PDF 或 JPG/PNG 圖片" });
         }
 
-        if (oversized.length > 0) {
-          return res.status(400).json({ msg: "每個檔案大小不可超過 5MB" });
+        if (allFiles.some(file => file.size > 5 * 1024 * 1024)) {
+          return res.status(400).json({ message: "每個檔案大小不可超過 5MB" });
         }
 
         newUser.organizationDocs = {
@@ -215,33 +186,49 @@ const userCode = `${prefix}-${String(count + 1).padStart(5, "0")}`;
         };
       }
 
-newUser.password = await bcrypt.hash(password, 10);
-await newUser.save();
+      await newUser.save();
 
-if (newUser.userType === "organization") {
-  // 🔒 機構用戶不即時登入，提示等待審批
-  return res.json({
-    msg: "✅ 機構註冊成功，請等待後台審批通過後再登入。",
-    user: {
-      id: newUser._id,
-      name: newUser.name,
-      userCode: newUser.userCode,
-      userType: newUser.userType,
-      tags: newUser.tags,
-      organizationDocs: newUser.organizationDocs || {}
+      // 機構用戶需等待審批
+      if (newUser.userType === "organization") {
+        return res.json({
+          message: "✅ 機構註冊成功，請等待後台審批",
+          user: {
+            id: newUser._id,
+            name: newUser.name,
+            userCode: newUser.userCode,
+            userType: newUser.userType,
+            tags: newUser.tags,
+            organizationDocs: newUser.organizationDocs || {}
+          }
+        });
+      }
+
+      // 其他用戶直接登入
+      const token = jwt.sign(
+        { user: { id: newUser.id, role: determineUserRole(newUser.tags) } },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+
+      res.json({
+        message: "✅ 註冊成功",
+        token,
+        user: {
+          id: newUser._id,
+          name: newUser.name,
+          userCode: newUser.userCode,
+          userType: newUser.userType,
+          tags: newUser.tags,
+        }
+      });
+    } catch (err) {
+      console.error("❌ 註冊錯誤:", err.message);
+      res.status(500).json({ message: "註冊失敗，請稍後再試" });
     }
-  });
-}
+  }
+);
 
-// ✅ 其他用戶正常登入（例如個人用戶）
-let role = "user";
-if (newUser.tags.includes("admin")) role = "admin";
-else if (newUser.tags.includes("institution")) role = "organization";
-else if (newUser.tags.includes("tutor")) role = "tutor";
-else if (newUser.tags.includes("student")) role = "student";
-
-const token = jwt.sign({ user: { id: newUser.id, role } }, process.env.JWT_SECRET, { expiresIn: "1h" });
-
+// ✅ POST /api/users/login
 router.post(
   "/login",
   [
@@ -249,10 +236,8 @@ router.post(
     check("identifier", "請輸入電郵或電話號碼").notEmpty(),
   ],
   async (req, res) => {
-    console.log("📌 收到 /login 請求:", req.body);
     const errors = validationResult(req);
-    if (!errors.isEmpty())
-      return res.status(400).json({ errors: errors.array() });
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const { identifier, password } = req.body;
 
@@ -261,70 +246,55 @@ router.post(
         $or: [{ email: identifier }, { phone: identifier }],
       }).select("+password");
 
-      if (!user)
-        return res.status(400).json({ msg: "無效的帳號或密碼 (用戶不存在)" });
+      if (!user) return res.status(400).json({ message: "無效的帳號或密碼" });
 
       const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch)
-        return res.status(400).json({ msg: "無效的帳號或密碼" });
+      if (!isMatch) return res.status(400).json({ message: "無效的帳號或密碼" });
 
-      // ✅ 機構用戶如未審批，禁止登入
-      if (
-        user.userType === "organization" &&
-        user.tags.includes("institution")
-      ) {
-        if (
-          !user.organizationDocs?.br ||
-          !user.organizationDocs?.cr ||
-          !user.organizationDocs?.addressProof
-        ) {
-          return res.status(403).json({
-            msg: "您的機構資料尚未提交完整，請補交文件後再試。",
-          });
+      // 機構用戶檢查
+      if (user.userType === "organization" && user.tags.includes("institution")) {
+        if (!user.organizationDocs?.br || !user.organizationDocs?.cr || !user.organizationDocs?.addressProof) {
+          return res.status(403).json({ message: "機構資料尚未提交完整" });
         }
 
         if (user.status !== "approved") {
-          return res.status(403).json({
-            msg: "您的機構帳戶尚未審批，請等待平台審核。",
-          });
+          return res.status(403).json({ message: "機構帳戶尚未審批" });
         }
       }
 
-      let role = "user";
-      if (user.tags.includes("admin")) role = "admin";
-      else if (user.tags.includes("institution")) role = "organization";
-      else if (user.tags.includes("tutor")) role = "tutor";
-      else if (user.tags.includes("student")) role = "student";
+      const token = jwt.sign(
+        { user: { id: user.id, role: determineUserRole(user.tags) } },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
 
-      const payload = { user: { id: user.id, role } };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: "1h",
+      res.json({ 
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          userType: user.userType,
+          tags: user.tags
+        }
       });
-
-      res.json({ token });
     } catch (err) {
       console.error("❌ 登入錯誤:", err.message);
-      res.status(500).send("伺服器錯誤");
+      res.status(500).json({ message: "伺服器錯誤" });
     }
   }
 );
-
 
 // ✅ POST /api/users/check-phone
 router.post("/check-phone", async (req, res) => {
   try {
     const { phone } = req.body;
-    if (!phone) return res.status(400).json({ msg: "請提供電話號碼" });
+    if (!phone) return res.status(400).json({ message: "請提供電話號碼" });
 
     const existing = await User.findOne({ phone, status: "active" });
-    if (existing) {
-      return res.status(200).json({ exists: true, msg: "電話號碼已被使用" });
-    }
-
-    res.status(200).json({ exists: false });
+    res.status(200).json({ exists: !!existing });
   } catch (err) {
     console.error("❌ 檢查電話錯誤:", err.message);
-    res.status(500).json({ msg: "伺服器錯誤" });
+    res.status(500).json({ message: "伺服器錯誤" });
   }
 });
 
@@ -332,226 +302,192 @@ router.post("/check-phone", async (req, res) => {
 router.post("/check-email", async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ msg: "請提供電郵" });
+    if (!email) return res.status(400).json({ message: "請提供電郵" });
 
     const existing = await User.findOne({ email, status: "active" });
-    if (existing) {
-      return res.status(200).json({ exists: true, msg: "電郵已被使用" });
-    }
-
-    res.status(200).json({ exists: false });
+    res.status(200).json({ exists: !!existing });
   } catch (err) {
     console.error("❌ 檢查電郵錯誤:", err.message);
-    res.status(500).json({ msg: "伺服器錯誤" });
+    res.status(500).json({ message: "伺服器錯誤" });
   }
 });
 
-
-// ✅ 刷新 Token
+// ✅ POST /api/users/refresh-token
 router.post("/refresh-token", authMiddleware, async (req, res) => {
   try {
-    const user = req.user;
-
-    let role = "user";
-    if (user.tags?.includes("admin")) role = "admin";
-    else if (user.tags?.includes("institution")) role = "organization";
-    else if (user.tags?.includes("tutor")) role = "tutor";
-    else if (user.tags?.includes("student")) role = "student";
-
-    const newToken = jwt.sign({ user: { id: user._id, role } }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
+    const newToken = jwt.sign(
+      { user: { id: req.user._id, role: determineUserRole(req.user.tags) } },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
     res.json({ token: newToken });
   } catch (err) {
     console.error("❌ 刷新 Token 失敗:", err.message);
-    res.status(500).json({ msg: "伺服器錯誤" });
+    res.status(500).json({ message: "伺服器錯誤" });
   }
 });
 
-
+// ✅ POST /api/users/upgrade-to-tutor
 router.post("/upgrade-to-tutor", authMiddleware, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const user = await User.findById(userId);
-
-    if (!user) return res.status(404).json({ msg: "找不到用戶" });
-    if (user.userType !== "individual") return res.status(400).json({ msg: "只有個人用戶可升級為導師" });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "找不到用戶" });
+    if (user.userType !== "individual") {
+      return res.status(400).json({ message: "只有個人用戶可升級為導師" });
+    }
 
     if (!user.tags.includes("tutor")) {
       user.tags.push("tutor");
-
       const count = await User.countDocuments({ tags: "tutor" });
       user.userCode = `T-${String(count + 1).padStart(5, "0")}`;
-
       await user.save();
     }
 
-    res.status(200).json({ msg: "✅ 成功升級為導師", user });
+    res.json({ 
+      message: "✅ 成功升級為導師",
+      user: {
+        id: user._id,
+        name: user.name,
+        userCode: user.userCode,
+        tags: user.tags
+      }
+    });
   } catch (err) {
     console.error("❌ 升級導師失敗:", err);
-    res.status(500).json({ msg: "伺服器錯誤，升級失敗" });
+    res.status(500).json({ message: "升級失敗" });
   }
 });
 
-// ✅ 取得所有用戶（for Admin 用戶列表）👉 對應 /api/users
+// ✅ GET /api/users
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const sortField = req.query.sortField || "createdAt";
     const sortOrder = req.query.sortOrder === "DESC" ? -1 : 1;
-    const sortOption = {};
-    sortOption[sortField] = sortOrder;
+    const sortOption = { [sortField]: sortOrder };
 
     const users = await User.find().select("-password").sort(sortOption);
     const totalUsers = await User.countDocuments();
 
-    res.set("Access-Control-Expose-Headers", "Content-Range, X-Total-Count");
-    res.set("Content-Range", `users 0-${users.length - 1}/${totalUsers}`);
-    res.set("X-Total-Count", totalUsers);
+    res.set({
+      "Access-Control-Expose-Headers": "Content-Range, X-Total-Count",
+      "Content-Range": `users 0-${users.length - 1}/${totalUsers}`,
+      "X-Total-Count": totalUsers
+    });
 
-    res.status(200).json(users);
+    res.json(users);
   } catch (err) {
     console.error("❌ 讀取用戶錯誤:", err.message);
-    res.status(500).send("伺服器錯誤");
+    res.status(500).json({ message: "伺服器錯誤" });
   }
 });
 
-// ✅ 加返這條 API：取得單一用戶
+// ✅ GET /api/users/:id
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
-    if (!user) return res.status(404).json({ msg: "找不到用戶" });
-    res.status(200).json(user);
+    if (!user) return res.status(404).json({ message: "找不到用戶" });
+    res.json(user);
   } catch (err) {
     console.error("❌ 讀取用戶錯誤:", err.message);
-    res.status(500).json({ msg: "伺服器錯誤" });
+    res.status(500).json({ message: "伺服器錯誤" });
   }
 });
 
-// ✅ 更新單一用戶（for Admin 編輯 user 資料）
+// ✅ PUT /api/users/:id
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
-    const userId = req.params.id;
-    const updates = req.body;
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    ).select("-password");
 
-    const updatedUser = await User.findByIdAndUpdate(userId, updates, {
-      new: true,
-    }).select("-password");
-
-    if (!updatedUser) return res.status(404).json({ msg: "找不到用戶" });
-
-    res.json({ msg: "✅ 用戶已更新", user: updatedUser });
+    if (!updatedUser) return res.status(404).json({ message: "找不到用戶" });
+    res.json({ message: "✅ 用戶已更新", user: updatedUser });
   } catch (err) {
     console.error("❌ 更新用戶失敗:", err.message);
-    res.status(500).json({ msg: "伺服器錯誤" });
+    res.status(500).json({ message: "伺服器錯誤" });
   }
 });
 
-// ✅ 刪除用戶
+// ✅ DELETE /api/users/:id
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
-    const userId = req.params.id;
     const requester = req.user;
+    const user = await User.findById(req.params.id);
 
-    // 如果係 admin，永久刪除
+    if (!user) return res.status(404).json({ message: "找不到用戶" });
+
+    // Admin 直接刪除
     if (requester.tags.includes("admin")) {
-      await User.findByIdAndDelete(userId);
-      return res.json({ msg: "✅ 用戶已永久刪除" });
+      await user.deleteOne();
+      return res.json({ message: "✅ 用戶已永久刪除" });
     }
 
-    // 如果係用戶自己刪自己，就 set 為 inactive
-    if (requester.id === userId) {
-  const user = await User.findById(userId);
-  if (!user) return res.status(404).json({ msg: "找不到用戶" });
+    // 用戶自己停用帳戶
+    if (requester.id === req.params.id) {
+      user.status = "inactive";
+      user.userCode = user.userCode || `U-${user._id.toString().slice(-5)}`;
+      await user.save();
+      return res.json({ message: "✅ 帳戶已隱藏" });
+    }
 
-  user.status = "inactive";
-
-  // ✅ 強制設定欄位，避免 Mongoose validation error
-  user.userCode = user.userCode || `U-${user._id.toString().slice(-5)}`;
-
-  await user.save();
-
-  return res.json({ msg: "✅ 帳戶已隱藏（已登出，無法再登入）" });
-}
-
-
-    return res.status(403).json({ msg: "你沒有權限刪除此帳戶" });
+    res.status(403).json({ message: "權限不足" });
   } catch (err) {
     console.error("❌ 刪除用戶失敗:", err.message);
-    res.status(500).json({ msg: "伺服器錯誤" });
+    res.status(500).json({ message: "伺服器錯誤" });
   }
 });
 
-// ✅ POST /api/users/reset-password：使用 token 重設密碼
+// ✅ POST /api/users/reset-password
 router.post("/reset-password", async (req, res) => {
   try {
     const { token, newPassword } = req.body;
     if (!token || !newPassword) {
-      return res.status(400).json({ msg: "請提供 token 和新密碼" });
+      return res.status(400).json({ message: "請提供 token 和新密碼" });
     }
 
-    // 驗證 token
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      return res.status(400).json({ msg: "Token 已失效或無效" });
-    }
-
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId);
-    if (!user) return res.status(404).json({ msg: "找不到用戶" });
+    if (!user) return res.status(404).json({ message: "找不到用戶" });
 
-    // 檢查密碼格式
-    const isValid =
-      typeof newPassword === "string" &&
-      newPassword.length >= 8 &&
-      /[A-Za-z]/.test(newPassword) &&
-      /\d/.test(newPassword);
-
-    if (!isValid) {
-      return res.status(400).json({ msg: "密碼格式錯誤，請至少 8 字、包含英文字母及數字" });
+    // 密碼強度驗證
+    if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      return res.status(400).json({ message: "密碼需至少8字且包含字母和數字" });
     }
 
-    // 更新密碼
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
-    res.json({ msg: "✅ 密碼已成功重設，請用新密碼登入" });
+    res.json({ message: "✅ 密碼已重設" });
   } catch (err) {
     console.error("❌ 重設密碼錯誤:", err.message);
-    res.status(500).json({ msg: "伺服器錯誤，請稍後再試。" });
+    const message = err.name === "TokenExpiredError" ? "Token已過期" : "無效的Token";
+    res.status(400).json({ message });
   }
 });
 
-// ✅ POST /api/users/reset-password：使用 token 重設密碼
-router.post("/reset-password", async (req, res) => {
-  // ...（略）
-});
-
-// ✅ Admin 審批機構帳戶
+// ✅ POST /api/users/approve-organization/:id
 router.post("/approve-organization/:id", authMiddleware, async (req, res) => {
   try {
-    const adminUser = req.user;
-    if (!adminUser.tags.includes("admin")) {
-      return res.status(403).json({ msg: "你沒有權限進行此操作" });
+    if (!req.user.tags.includes("admin")) {
+      return res.status(403).json({ message: "權限不足" });
     }
 
-    const targetUserId = req.params.id;
-    const user = await User.findById(targetUserId);
-    if (!user) return res.status(404).json({ msg: "找不到用戶" });
-
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "找不到用戶" });
     if (user.userType !== "organization") {
-      return res.status(400).json({ msg: "此用戶不是機構帳戶" });
+      return res.status(400).json({ message: "非機構帳戶" });
     }
 
     user.status = "approved";
     await user.save();
 
-    res.json({ msg: "✅ 機構帳戶已成功審批" });
+    res.json({ message: "✅ 機構帳戶已審批" });
   } catch (err) {
     console.error("❌ 機構審批錯誤:", err.message);
-    res.status(500).json({ msg: "伺服器錯誤，審批失敗" });
+    res.status(500).json({ message: "伺服器錯誤" });
   }
 });
 
-export default router;
+export default router;//呢到就完,試下先
