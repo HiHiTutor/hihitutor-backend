@@ -15,57 +15,64 @@ dotenv.config();
 const router = express.Router();
 console.log("✅ userRoutes.js 已載入");
 
-// ✅ POST /api/users/request-password-reset
+// ✅ POST /api/users/request-password-reset：根據電話寄出 email reset link
 router.post("/request-password-reset", async (req, res) => {
-  const { phone } = req.body;
-  if (!phone) return res.status(400).json({ msg: "請提供電話號碼" });
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ error: "請提供電話號碼" });
 
-  const user = await User.findOne({ phone });
-  if (!user || !user.email) return res.status(404).json({ msg: "找不到綁定電郵的帳戶" });
+    // 查找用戶
+    const user = await User.findOne({ phone });
+    if (!user || !user.email) {
+      return res.status(404).json({ error: "找不到綁定電郵的帳戶" });
+    }
 
-  const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    // 建立 reset token（30 分鐘有效）
+    const resetToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "30m" }
+    );
 
-  const resetLink = `https://hihitutor.com/reset-password?token=${token}`;
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.SMTP_EMAIL,
-      pass: process.env.SMTP_PASSWORD,
-    },
-  });
+    const resetLink = `https://www.hihitutor.com/reset-password?token=${resetToken}`;
 
-  await transporter.sendMail({
-    from: `HiHiTutor <${process.env.SMTP_EMAIL}>`,
-    to: user.email,
-    subject: "【HiHiTutor】重設密碼連結（15分鐘內有效）",
-    html: `
-      <p>親愛的用戶您好，</p>
-      <p>請點擊以下連結以重設您的 HiHiTutor 密碼（有效期為 15 分鐘）：</p>
-      <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
-      <p>如您沒有申請重設密碼，請忽略此電郵。</p>
-    `,
-  });
+    // 初始化 transporter
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    });
 
-  res.json({ msg: "✅ 已發送重設密碼連結至您的電郵" });
+    // 發送 email
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || `"HiHiTutor" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "【HiHiTutor】重設密碼連結（30分鐘內有效）",
+      html: `
+        <p>親愛的 ${user.name || "用戶"} 您好，</p>
+        <p>請點擊以下連結以重設您的 HiHiTutor 密碼（有效期為 30 分鐘）：</p>
+        <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
+        <p>如您沒有申請重設密碼，請忽略此電郵。</p>
+        <br />
+        <p>HiHiTutor 團隊敬上</p>
+      `
+    });
+
+    res.json({ msg: "✅ 重設密碼連結已發送到您的電郵" });
+  } catch (err) {
+    console.error("❌ 發送重設密碼 email 錯誤:", err.message);
+    res.status(500).json({ error: "發送失敗，請稍後再試。" });
+  }
 });
 
-// ✅ POST /api/users/reset-password
-router.post("/reset-password", async (req, res) => {
-  const { token, newPassword } = req.body;
-  if (!token || !newPassword) return res.status(400).json({ msg: "缺少參數" });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    if (!user) return res.status(404).json({ msg: "找不到用戶" });
-
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
-
-    res.json({ msg: "✅ 密碼已成功更新" });
+    res.json({ msg: "✅ 重設密碼連結已發送到您的電郵" });
   } catch (err) {
-    console.error("❌ 密碼重設錯誤:", err.message);
-    res.status(400).json({ msg: "連結無效或已過期" });
+    console.error("❌ 發送重設密碼 email 錯誤:", err.message);
+    res.status(500).json({ error: "發送失敗，請稍後再試。" });
   }
 });
 
