@@ -1,0 +1,580 @@
+{
+  "info": {
+    "name": "HiHiTutor API \u5168\u9762\u6e2c\u8a66\u96c6",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "\ud83d\udd10 \u8a3b\u518a",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/users/register",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/users/register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test1234\",\n  \"name\": \"Test\",\n  \"userType\": \"individual\",\n  \"birthdate\": \"2000-01-01\",\n  \"phone\": \"99998888\"\n}"
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udd10 \u767b\u5165",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/users/login",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/users/login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"88888888\"\n}"
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udd01 \u5237\u65b0 Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/users/refresh-token",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/users/refresh-token"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udc65 \u6240\u6709\u7528\u6236\uff08Admin\uff09",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/users",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/users"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udc64 \u53d6\u5f97\u55ae\u4e00\u7528\u6236",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/users/{userId}",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/users/{userId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\u270f\ufe0f \u66f4\u65b0\u7528\u6236",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/users/{userId}",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/users/{userId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\u274c \u522a\u9664\u7528\u6236",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/users/{userId}",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/users/{userId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udd11 \u5fd8\u8a18\u5bc6\u78bc",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/users/request-password-reset",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/users/request-password-reset"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"99998888\"\n}"
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udd11 \u91cd\u8a2d\u5bc6\u78bc",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/users/reset-password",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/users/reset-password"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"FAKE_TOKEN\",\n  \"newPassword\": \"NewPass1234\"\n}"
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udcf2 \u767c\u9001\u9a57\u8b49\u78bc",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/sms/send-code",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/sms/send-code"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"99998888\"\n}"
+        }
+      }
+    },
+    {
+      "name": "\u2705 \u9a57\u8b49\u9a57\u8b49\u78bc",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/sms/verify-code",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/sms/verify-code"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"99998888\",\n  \"code\": \"123456\"\n}"
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udcdd \u65b0\u589e\u500b\u6848",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/cases",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/cases"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"postType\": \"tutor-seeking-student\",\n  \"title\": \"\\u6e2c\\u8a66\\u500b\\u6848\"\n}"
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udd0d \u67e5\u8a62\u5df2\u5be9\u6279\u500b\u6848",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/cases/public",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/cases/public"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udd53 \u67e5\u8a62\u5f85\u5be9\u6279\u500b\u6848",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/cases/pending",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/cases/pending"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udd0d \u67e5\u8a62\u55ae\u4e00\u500b\u6848",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/cases/{caseId}",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/cases/{caseId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\u2705 \u5be9\u6279\u500b\u6848",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/cases/{caseId}/approve",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/cases/{caseId}/approve"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\u274c \u62d2\u7d55\u500b\u6848",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/cases/{caseId}/reject",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/cases/{caseId}/reject"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\u270f\ufe0f \u66f4\u65b0\u500b\u6848",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/cases/{caseId}",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/cases/{caseId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\uddd1\ufe0f \u522a\u9664\u500b\u6848",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/cases/{caseId}",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/cases/{caseId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\uddbc\ufe0f \u4e0a\u50b3\u982d\u50cf",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/profiles/{userId}/avatar",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/profiles/{userId}/avatar"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udcc4 \u4e0a\u50b3\u8b49\u66f8",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/profiles/{userId}/certificates",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/profiles/{userId}/certificates"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udccb \u63d0\u4ea4\u500b\u4eba\u6a94\u6848",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/profiles/{userId}",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/profiles/{userId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\u2705 \u5be9\u6279\u500b\u4eba\u6a94\u6848",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/profiles/approve/{userId}",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/profiles/approve/{userId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udd0d \u67e5\u8a62\u500b\u4eba\u6a94\u6848",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/profiles/{userId}",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/profiles/{userId}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udcda \u6211\u7684\u500b\u6848",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/self-users/my-cases",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/self-users/my-cases"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udc64 \u6211\u7684\u500b\u4eba\u8cc7\u6599",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "https://hihitutor-backend.onrender.com/api/self-users/me",
+          "host": [
+            "https://hihitutor-backend.onrender.com/api/self-users/me"
+          ]
+        }
+      }
+    }
+  ]
+}

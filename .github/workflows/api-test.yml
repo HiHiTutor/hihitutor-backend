@@ -1,0 +1,19 @@
+name: 🚀 API Test with Postman
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  run-api-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔽 Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🧪 Run API tests using Postman Collection
+        uses: matt-ball/newman-action@v1
+        with:
+          collection: postman/api-tests.postman_collection.json
