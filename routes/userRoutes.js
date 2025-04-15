@@ -392,16 +392,55 @@ router.get("/:id", authMiddleware, async (req, res) => {
 // ✅ PUT /api/users/:id
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
+    const { name, phone } = req.body;
+    
+    // 確保只能更新自己的資料，除非是管理員
+    if (req.user.id !== req.params.id && !req.user.tags.includes("admin")) {
+      return res.status(403).json({ message: "沒有權限更新其他用戶的資料" });
+    }
+
+    // 檢查電話號碼是否已被其他用戶使用
+    if (phone) {
+      const existingUser = await User.findOne({ 
+        phone, 
+        _id: { $ne: req.params.id },
+        status: "active"
+      });
+      
+      if (existingUser) {
+        return res.status(400).json({ message: "此電話號碼已被使用" });
+      }
+    }
+
+    // 只允許更新特定欄位
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (phone) updateData.phone = phone;
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true }
     ).select("-password");
 
-    if (!updatedUser) return res.status(404).json({ message: "找不到用戶" });
-    res.json({ message: "✅ 用戶已更新", user: updatedUser });
+    if (!updatedUser) {
+      return res.status(404).json({ message: "找不到用戶" });
+    }
+
+    // 更新成功
+    res.json({ 
+      message: "✅ 資料已更新",
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        email: updatedUser.email,
+        userType: updatedUser.userType,
+        tags: updatedUser.tags
+      }
+    });
   } catch (err) {
-    console.error("❌ 更新用戶失敗:", err.message);
+    console.error("❌ 更新用戶資料失敗:", err.message);
     res.status(500).json({ message: "伺服器錯誤" });
   }
 });
