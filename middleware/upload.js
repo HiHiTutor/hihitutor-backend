@@ -54,17 +54,34 @@ const orgStorage = multer.diskStorage({
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}_${file.originalname}`);
+    // 生成安全的文件名
+    const ext = path.extname(file.originalname);
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    cb(null, `${timestamp}_${randomString}${ext}`);
   },
 });
 
 // ✅ 上傳限制設定
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-  if (allowedTypes.includes(file.mimetype)) {
+  // 放寬 MIME 類型限制
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "application/pdf",
+    "image/webp",
+    "image/gif"
+  ];
+  
+  // 檢查文件擴展名
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.webp', '.gif'];
+  
+  if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error("❌ 只允許上傳 JPG、PNG 或 PDF 檔案"), false);
+    cb(new Error(`❌ 不支援的文件類型。允許的類型：${allowedExtensions.join(', ')}`), false);
   }
 };
 
