@@ -163,13 +163,13 @@ router.post(
 
       // 處理機構用戶文件上傳
       if (userType === "organization") {
-        const { br, cr, addressProof } = req.files || {};
-        if (!br?.[0] || !cr?.[0] || !addressProof?.[0]) {
-          return res.status(400).json({ message: "機構註冊需上載 BR、CR 及地址證明" });
+        const { businessRegistration, addressProof } = req.files || {};
+        if (!businessRegistration?.[0] || !addressProof?.[0]) {
+          return res.status(400).json({ message: "機構註冊需上載商業登記及地址證明" });
         }
 
         const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
-        const allFiles = [br[0], cr[0], addressProof[0]];
+        const allFiles = [businessRegistration[0], addressProof[0]];
 
         if (allFiles.some(file => !allowedTypes.includes(file.mimetype))) {
           return res.status(400).json({ message: "請只上傳 PDF 或 JPG/PNG 圖片" });
@@ -180,9 +180,8 @@ router.post(
         }
 
         newUser.organizationDocs = {
-          br: br[0].path,
-          cr: cr[0].path,
-          addressProof: addressProof[0].path
+          businessRegistration: `/uploads/organizationDocs/${businessRegistration[0].filename}`,
+          addressProof: `/uploads/organizationDocs/${addressProof[0].filename}`
         };
       }
 
@@ -252,11 +251,7 @@ router.post(
       if (!isMatch) return res.status(400).json({ message: "無效的帳號或密碼" });
 
       // 機構用戶檢查
-      if (user.userType === "organization" && user.tags.includes("institution")) {
-        if (!user.organizationDocs?.br || !user.organizationDocs?.cr || !user.organizationDocs?.addressProof) {
-          return res.status(403).json({ message: "機構資料尚未提交完整" });
-        }
-
+      if (user.userType === "organization") {
         if (user.status !== "approved") {
           return res.status(403).json({ message: "機構帳戶尚未審批" });
         }
@@ -283,6 +278,7 @@ router.post(
     }
   }
 );
+
 
 // ✅ POST /api/users/check-phone
 router.post("/check-phone", async (req, res) => {
