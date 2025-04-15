@@ -16,7 +16,9 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 // ✅ 上傳目錄配置
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, "uploads");
+const UPLOAD_DIR = process.env.UPLOAD_DIR 
+  ? path.resolve(__dirname, process.env.UPLOAD_DIR)
+  : path.join(__dirname, "uploads");
 console.log("📂 上傳目錄:", UPLOAD_DIR);
 
 // ✅ 確保所有上傳目錄存在
