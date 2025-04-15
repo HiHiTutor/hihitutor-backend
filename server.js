@@ -15,17 +15,21 @@ const __dirname = dirname(__filename);
 // ✅ 載入 .env
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
+// ✅ 上傳目錄配置
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, "uploads");
+console.log("📂 上傳目錄:", UPLOAD_DIR);
+
 // ✅ 確保所有上傳目錄存在
 const createUploadDirs = () => {
   const dirs = [
-    'uploads',
-    'uploads/avatars',
-    'uploads/certificates',
-    'uploads/organizationDocs'
+    '',
+    'avatars',
+    'certificates',
+    'organizationDocs'
   ];
   
   dirs.forEach(dir => {
-    const fullPath = path.join(__dirname, dir);
+    const fullPath = path.join(UPLOAD_DIR, dir);
     if (!fs.existsSync(fullPath)) {
       fs.mkdirSync(fullPath, { recursive: true });
       console.log(`✅ 創建目錄: ${fullPath}`);
@@ -105,11 +109,12 @@ app.get("/api/health", (req, res) => {
 // ✅ 靜態文件
 app.use("/uploads", (req, res, next) => {
   console.log(`📂 訪問文件: ${req.url}`);
-  const filePath = path.join(__dirname, "uploads", req.url);
+  const filePath = path.join(UPLOAD_DIR, req.url);
   
   // 檢查文件是否存在
   if (fs.existsSync(filePath)) {
-    express.static(path.join(__dirname, "uploads"))(req, res, next);
+    console.log(`✅ 文件存在: ${filePath}`);
+    express.static(UPLOAD_DIR)(req, res, next);
   } else {
     console.error(`❌ 文件不存在: ${filePath}`);
     res.status(404).json({ error: "❌ 找不到文件" });

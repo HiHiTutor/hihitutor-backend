@@ -3,10 +3,17 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import dotenv from "dotenv";
 
 // ✅ 解決 __dirname 問題（ESM）
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// ✅ 載入環境變量
+dotenv.config();
+
+// ✅ 上傳目錄配置
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, "../uploads");
 
 // ✅ 建立目錄（若未存在）
 const ensureDirExists = (dir) => {
@@ -18,7 +25,7 @@ const ensureDirExists = (dir) => {
 // ✅ 儲存設定：頭像
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, "../uploads/avatars");
+    const dir = path.join(UPLOAD_DIR, "avatars");
     ensureDirExists(dir);
     cb(null, dir);
   },
@@ -30,7 +37,7 @@ const avatarStorage = multer.diskStorage({
 // ✅ 儲存設定：證書
 const certificateStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, "../uploads/certificates");
+    const dir = path.join(UPLOAD_DIR, "certificates");
     ensureDirExists(dir);
     cb(null, dir);
   },
@@ -42,7 +49,7 @@ const certificateStorage = multer.diskStorage({
 // ✅ 儲存設定：機構證明文件
 const orgStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, "../uploads/organizationDocs");
+    const dir = path.join(UPLOAD_DIR, "organizationDocs");
     ensureDirExists(dir);
     cb(null, dir);
   },
