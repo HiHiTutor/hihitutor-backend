@@ -14,6 +14,21 @@ const Verification = mongoose.model('Verification', verificationSchema);
 const router = express.Router();
 const verifiedPhones = new Map();
 
+// 清理過期的已驗證電話記錄（24小時後）
+const cleanupVerifiedPhones = () => {
+  const now = Date.now();
+  const expiryTime = 24 * 60 * 60 * 1000; // 24小時
+  
+  for (const [phone, timestamp] of verifiedPhones.entries()) {
+    if (now - timestamp > expiryTime) {
+      verifiedPhones.delete(phone);
+    }
+  }
+};
+
+// 每小時執行一次清理
+setInterval(cleanupVerifiedPhones, 60 * 60 * 1000);
+
 // 🔹 POST /api/sms/send-code
 router.post("/send-code", async (req, res) => {
   try {

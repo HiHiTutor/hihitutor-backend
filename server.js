@@ -47,7 +47,7 @@ app.use((req, res, next) => {
 });
 
 // ✅ 載入所有路由（記得補 .js）
-import smsRoutes, { verifiedPhones, verificationCodes } from "./routes/smsRoutes.js";
+import smsRoutes, { verifiedPhones } from "./routes/smsRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import userSelfRoutes from "./routes/userSelfRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
@@ -73,6 +73,15 @@ app.get("/api", (req, res) => {
 app.get("/", (req, res) => {
   res.json({ message: "✅ HiHiTutor API 已啟動，請使用 /api 開頭的路由。" });
 });
+
+// ✅ 健康檢查路由
+app.get("/api/health", (req, res) => {
+  console.log("Health check endpoint called");
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// ✅ 靜態文件
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ✅ 404 handler
 app.use((req, res) => {
