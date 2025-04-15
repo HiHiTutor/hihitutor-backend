@@ -15,11 +15,26 @@ const __dirname = dirname(__filename);
 // ✅ 載入 .env
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
-// ✅ 確保上傳目錄存在
-const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// ✅ 確保所有上傳目錄存在
+const createUploadDirs = () => {
+  const dirs = [
+    'uploads',
+    'uploads/avatars',
+    'uploads/certificates',
+    'uploads/organizationDocs'
+  ];
+  
+  dirs.forEach(dir => {
+    const fullPath = path.join(__dirname, dir);
+    if (!fs.existsSync(fullPath)) {
+      fs.mkdirSync(fullPath, { recursive: true });
+      console.log(`✅ 創建目錄: ${fullPath}`);
+    }
+  });
+};
+
+// 創建目錄
+createUploadDirs();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -88,10 +103,22 @@ app.get("/api/health", (req, res) => {
 });
 
 // ✅ 靜態文件
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", (req, res, next) => {
+  console.log(`📂 訪問文件: ${req.url}`);
+  const filePath = path.join(__dirname, "uploads", req.url);
+  
+  // 檢查文件是否存在
+  if (fs.existsSync(filePath)) {
+    express.static(path.join(__dirname, "uploads"))(req, res, next);
+  } else {
+    console.error(`❌ 文件不存在: ${filePath}`);
+    res.status(404).json({ error: "❌ 找不到文件" });
+  }
+});
 
 // ✅ 404 handler
 app.use((req, res) => {
+  console.error(`❌ 路由不存在: ${req.method} ${req.url}`);
   res.status(404).json({ error: "❌ API 路由不存在" });
 });
 
