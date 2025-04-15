@@ -6,6 +6,7 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import fs from "fs";
 
 // ✅ 處理 ESM 無 __dirname 問題
 const __filename = fileURLToPath(import.meta.url);
@@ -13,6 +14,12 @@ const __dirname = dirname(__filename);
 
 // ✅ 載入 .env
 dotenv.config({ path: path.resolve(__dirname, ".env") });
+
+// ✅ 確保上傳目錄存在
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
